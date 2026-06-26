@@ -9,46 +9,72 @@ export default {
     // Verify presence of internal master passport credentials
     const passportToken = request.headers.get("Authorization");
     if (!passportToken) {
-      return new Response("Missing security boundary token.", { status: 401 });
+      return new Response(JSON.stringify({ error: "Missing security boundary token." }), {
+        status: 401,
+        headers: getCorsHeaders()
+      });
     }
 
-    // Proxy endpoint routing to the primary AXiM data spine
-    if (url.pathname === "/api/agentview/sync" && request.method === "POST") {
-      const payload = await request.json();
+    // Securely inject the internal AXiM key
+    const internalAximKey = env.AXIM_INTERNAL_KEY || 'development_mock_key';
+
+    // Route /api/agentview/* to AXiM Core API
+    if (url.pathname.startsWith("/api/agentview/")) {
+      const corePath = url.pathname.replace("/api/agentview", "/v1/internal/orchestration");
       
-      // Perform fast-path formatting on the edge before updating core ledger
-      const standardizedPayload = {
-        ...payload,
-        synchronized_at: new Date().toISOString(),
-        node_origin: "CLOUDFLARE_EDGE_PLANE"
-      };
+      const coreHeaders = new Headers(request.headers);
+      coreHeaders.set("Authorization", `Bearer ${internalAximKey}`);
+      coreHeaders.set("X-Original-Token", passportToken); // Forward original user token for context
 
-      // Dispatch to main API via fetch with keepalive optimization
-      const coreResponse = await fetch("https://api.axim.us.com/v1/internal/orchestration/sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": passportToken
-        },
-        body: JSON.stringify(standardizedPayload)
-      });
+      try {
+        const coreResponse = await fetch(`https://api.axim.us.com${corePath}${url.search}`, {
+          method: request.method,
+          headers: coreHeaders,
+          body: request.method !== 'GET' && request.method !== 'HEAD' ? await request.arrayBuffer() : undefined,
+        });
 
-      return new Response(coreResponse.body, {
-        status: coreResponse.status,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-      });
+        // We copy the response but replace CORS headers
+        const responseHeaders = new Headers(coreResponse.headers);
+        setCorsHeaders(responseHeaders);
+
+        return new Response(coreResponse.body, {
+          status: coreResponse.status,
+          statusText: coreResponse.statusText,
+          headers: responseHeaders
+        });
+      } catch (error) {
+         return new Response(JSON.stringify({ error: "Upstream AXiM Core API failure." }), {
+          status: 502,
+          headers: getCorsHeaders()
+        });
+      }
     }
 
-    return new Response("Route unrecognized by AgentView proxy plane.", { status: 404 });
+    return new Response(JSON.stringify({ error: "Route unrecognized by AgentView proxy plane." }), {
+      status: 404,
+      headers: getCorsHeaders()
+    });
   }
 };
 
+function getCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+    "Content-Type": "application/json"
+  };
+}
+
+function setCorsHeaders(headers) {
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+}
+
 function handleCorsPreflight() {
-  return new Response("CORS_OK", {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    }
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders()
   });
 }

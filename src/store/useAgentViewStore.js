@@ -1,8 +1,34 @@
 import { create } from 'zustand';
-import { MOCK_WORKERS, MOCK_TASKS } from '../mockData';
-import { agentService } from '../services/agentService';
-import { taskService } from '../services/taskService';
-import { logService } from '../services/logService';
+
+// Cloudflare Worker API URL prefix
+const API_URL = '/api/agentview';
+
+// Helper function to handle fetch calls
+async function apiCall(endpoint, method = 'GET', body = null, token = null) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const options = {
+    method,
+    headers,
+  };
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${API_URL}${endpoint}`, options);
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
 
 export const useAgentViewStore = create((set, get) => ({
   activeWorkers: [],
@@ -17,7 +43,7 @@ export const useAgentViewStore = create((set, get) => ({
   setSelectedAgent: (agent) => set({ selectedAgent: agent }),
   setTaskModalOpen: (isOpen) => set({ isTaskModalOpen: isOpen }),
 
-  addLog: async (type, message, severity = 'INFO') => {
+  addLog: (type, message, severity = 'INFO') => {
     const newLog = {
       id: Date.now().toString(),
       timestamp: new Date().toISOString(),
@@ -28,45 +54,29 @@ export const useAgentViewStore = create((set, get) => ({
     
     set(state => ({ systemLogs: [newLog, ...state.systemLogs].slice(0, 50) }));
     
-    try {
-      await logService.add(newLog);
-    } catch (e) {
-      console.error('Failed to persist log to Sheets', e);
-    }
+    // We fire and forget the log to the worker endpoints
+    apiCall('/logs', 'POST', newLog).catch(e => {
+        console.error('Failed to persist log to worker', e);
+    });
   },
 
   fetchEcosystemState: async () => {
     set({ isLoading: true });
     
     try {
-      const existingWorkers = await agentService.getAll();
-      if (existingWorkers.length === 0) {
-        get().addLog('BOOT', 'Initializing ecosystem with seed data...');
-        for (const worker of MOCK_WORKERS) {
-          await agentService.create(worker);
-        }
-        for (const task of MOCK_TASKS) {
-          await taskService.create(task);
-        }
-      }
-
-      const [workers, tasks, logs] = await Promise.all([
-        agentService.getAll(),
-        taskService.getAll(),
-        logService.getAll()
-      ]);
+      const data = await apiCall('/state');
 
       set({ 
-        activeWorkers: workers, 
-        activeTasks: tasks,
-        systemLogs: logs,
+        activeWorkers: data.workers || [],
+        activeTasks: data.tasks || [],
+        systemLogs: data.logs || [],
         isLoading: false 
       });
-      get().addLog('SYNC', 'Ecosystem state synchronized with Sheets.', 'SUCCESS');
+      get().addLog('SYNC', 'Ecosystem state synchronized via Worker API.', 'SUCCESS');
     } catch (error) {
       set({ isLoading: false });
       window.dispatchAgentViewAnomaly('STATE_SYNC_FAILURE', error);
-      get().addLog('FALLBACK', 'Database unreachable. Using edge cache.', 'WARNING');
+      get().addLog('FALLBACK', 'API unreachable. Using edge cache.', 'WARNING');
     }
   },
 
@@ -74,10 +84,7 @@ export const useAgentViewStore = create((set, get) => ({
     get().addLog('DELEGATION', `Routing task ${taskId} to node ${agentId}...`);
     
     try {
-      await Promise.all([
-        taskService.updateStatus(taskId, 'IN_PROGRESS', agentId),
-        agentService.updateStatus(agentId, 'ACTIVE_UTILIZATION', taskId)
-      ]);
+      await apiCall('/delegate', 'POST', { agentId, taskId }, passportToken);
       
       await get().fetchEcosystemState();
       get().addLog('DELEGATION', `Workflow successfully locked to ${agentId}.`, 'SUCCESS');
@@ -94,12 +101,9 @@ export const useAgentViewStore = create((set, get) => ({
     get().addLog('RESOLUTION', `Finalizing task vector ${taskId}...`);
     
     try {
-      const agentId = task.assigned_agent;
-      await Promise.all([
-        taskService.updateStatus(taskId, 'COMPLETED'),
-        agentId ? agentService.updateStatus(agentId, 'IDLE', null) : Promise.resolve()
-      ]);
+      await apiCall('/tasks/complete', 'POST', { taskId });
       
+      const agentId = task.assigned_agent;
       await get().fetchEcosystemState();
       get().addLog('RESOLUTION', `Task ${taskId} resolved. Resource ${agentId || 'N/A'} released.`, 'SUCCESS');
     } catch (error) {
@@ -112,12 +116,7 @@ export const useAgentViewStore = create((set, get) => ({
     get().addLog('DECOMMISSION', `Initiating purge of node ${agentId}...`);
     
     try {
-      const agent = get().activeWorkers.find(w => w.agent_id === agentId);
-      if (agent?.operational_capability.assigned_job_id) {
-        await taskService.updateStatus(agent.operational_capability.assigned_job_id, 'UNASSIGNED', null);
-      }
-      
-      await agentService.delete(agentId);
+      await apiCall(`/workers/${agentId}`, 'DELETE');
       await get().fetchEcosystemState();
       set({ selectedAgent: null });
       get().addLog('DECOMMISSION', `Node ${agentId} successfully purged from ecosystem.`, 'SUCCESS');
@@ -130,11 +129,7 @@ export const useAgentViewStore = create((set, get) => ({
   removeTask: async (taskId) => {
     get().addLog('CLEANUP', `Removing task vector ${taskId}...`);
     try {
-      const task = get().activeTasks.find(t => t.task_id === taskId);
-      if (task?.assigned_agent) {
-        await agentService.updateStatus(task.assigned_agent, 'IDLE', null);
-      }
-      await taskService.delete(taskId);
+      await apiCall(`/tasks/${taskId}`, 'DELETE');
       await get().fetchEcosystemState();
     } catch (error) {
       window.dispatchAgentViewAnomaly('TASK_REMOVAL_FAILURE', error);
@@ -145,11 +140,7 @@ export const useAgentViewStore = create((set, get) => ({
     get().addLog('INJECTION', `Pushing new task vector to ecosystem...`);
     
     try {
-      await taskService.create({
-        ...taskData,
-        required_skills: taskData.skills,
-        status: 'UNASSIGNED'
-      });
+      await apiCall('/tasks', 'POST', taskData, passportToken);
       
       await get().fetchEcosystemState();
       set({ isTaskModalOpen: false });

@@ -16,6 +16,12 @@ export default function AgentDetailPanel() {
     }
   };
 
+  const isAI = selectedAgent?.identity_profile.classification_type === 'AI_AGENT';
+  const costLabel = isAI ? 'Compute Cost / Task' : 'Hourly Rate';
+  const formattedRate = selectedAgent?.ecosystem_context.associated_billing_rate_cents
+    ? `$${(selectedAgent.ecosystem_context.associated_billing_rate_cents / 100).toFixed(2)}`
+    : '$0.00';
+
   return (
     <AnimatePresence>
       {selectedAgent && (
@@ -37,8 +43,8 @@ export default function AgentDetailPanel() {
             {/* Header */}
             <div className="h-20 px-6 flex items-center justify-between border-b border-slate-800 shrink-0 bg-slate-900/50">
               <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-lg border ${selectedAgent.identity_profile.classification_type === 'AI_AGENT' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-                  <SafeIcon icon={selectedAgent.identity_profile.classification_type === 'AI_AGENT' ? FiCpu : FiUser} className="text-2xl" />
+                <div className={`p-3 rounded-lg border ${isAI ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                  <SafeIcon icon={isAI ? FiCpu : FiUser} className="text-2xl" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-100 leading-tight">
@@ -96,6 +102,11 @@ export default function AgentDetailPanel() {
                       <SafeIcon icon={FiGlobe} className="text-slate-500" /> {selectedAgent.ecosystem_context.ingest_origin}
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-3 bg-slate-900 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
+                    <div className="text-[10px] font-bold uppercase text-slate-500">{costLabel}</div>
+                    <div className="text-sm text-slate-300 font-mono">{formattedRate}</div>
                 </div>
               </div>
 
