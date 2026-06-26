@@ -36,3 +36,17 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
   
   console.warn(`[AXiM Onyx Swarm] Telemetry Dispatched (${severity}):`, telemetryEnvelope);
 };
+
+// Methodical Validation - Simulated Failure Test
+window.runSimulatedFailureTest = () => {
+  console.log("Initializing simulated Core API failure test...");
+
+  // Create a mock error simulating an unreachable Core API
+  const mockError = new Error("Failed to fetch from AXiM Core API. Connection Refused.");
+  mockError.stack = "Error: Failed to fetch from AXiM Core API. Connection Refused.\\n    at fetchEcosystemState (src/store/useAgentViewStore.js:68:15)";
+
+  // Dispatch anomaly specifically for STATE_SYNC_FAILURE
+  window.dispatchAgentViewAnomaly('STATE_SYNC_FAILURE', mockError);
+
+  console.log("Simulated failure test complete. Verify CRITICAL payload in console.");
+};
