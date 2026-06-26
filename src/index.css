@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply antialiased text-slate-50 bg-slate-950;
+    @apply antialiased text-slate-50 bg-void;
   }
   
   /* Custom scrollbar for edge-native feel */
@@ -13,7 +13,7 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-slate-950;
+    @apply bg-void;
   }
   ::-webkit-scrollbar-thumb {
     @apply bg-slate-800 rounded-full;

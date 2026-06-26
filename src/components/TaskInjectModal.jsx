@@ -47,17 +47,17 @@ export default function TaskInjectModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !isSubmitting && setTaskModalOpen(false)}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-void/80 backdrop-blur-sm z-50"
           />
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 border border-slate-700 shadow-2xl rounded-2xl z-50 overflow-hidden"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-void border border-slate-700 shadow-2xl rounded-2xl z-50 overflow-hidden"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-void/50">
               <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <SafeIcon icon={FiActivity} className="text-indigo-400" />
+                <SafeIcon icon={FiActivity} className="text-axim-teal-400" />
                 Inject Task Vector
               </h2>
               <button 
@@ -77,7 +77,7 @@ export default function TaskInjectModal() {
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   placeholder="e.g. Data Anomaly Resolution"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full bg-void border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-axim-teal-500 transition-colors"
                   required
                   disabled={isSubmitting}
                 />
@@ -89,7 +89,7 @@ export default function TaskInjectModal() {
                   <select 
                     value={priority}
                     onChange={e => setPriority(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors appearance-none"
+                    className="w-full bg-void border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-axim-teal-500 transition-colors appearance-none"
                     disabled={isSubmitting}
                   >
                     <option value="LOW">Low</option>
@@ -105,7 +105,7 @@ export default function TaskInjectModal() {
                     value={skills}
                     onChange={e => setSkills(e.target.value)}
                     placeholder="triage, python"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full bg-void border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-axim-teal-500 transition-colors"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -123,7 +123,7 @@ export default function TaskInjectModal() {
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`flex items-center gap-2 px-5 py-2 bg-axim-teal-600 hover:bg-axim-teal-500 text-white rounded-lg text-sm font-semibold transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isSubmitting ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

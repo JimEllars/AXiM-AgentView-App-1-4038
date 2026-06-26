@@ -16,10 +16,12 @@ export default function AgentDetailPanel() {
     }
   };
 
-  const isAI = selectedAgent?.identity_profile.classification_type === 'AI_AGENT';
-  const costLabel = isAI ? 'Compute Cost / Task' : 'Hourly Rate';
-  const formattedRate = selectedAgent?.ecosystem_context.associated_billing_rate_cents
-    ? `$${(selectedAgent.ecosystem_context.associated_billing_rate_cents / 100).toFixed(2)}`
+  const classificationType = selectedAgent?.identity_profile?.classification_type || 'UNKNOWN';
+  const isAI = classificationType === 'AI_AGENT';
+  const isHuman = classificationType === 'HUMAN_1099' || classificationType === 'HUMAN';
+  const costLabel = isAI ? 'Compute Cost / Task' : (isHuman ? 'Hourly Rate' : 'Rate');
+  const formattedRate = selectedAgent?.ecosystem_context?.associated_billing_rate_cents
+    ? `${(selectedAgent.ecosystem_context.associated_billing_rate_cents / 100).toFixed(2)}`
     : '$0.00';
 
   return (
@@ -31,19 +33,19 @@ export default function AgentDetailPanel() {
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             onClick={() => setSelectedAgent(null)}
-            className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] z-40"
+            className="fixed inset-0 bg-void/40 backdrop-blur-[2px] z-40"
           />
           <motion.div 
             initial={{ x: '100%' }} 
             animate={{ x: 0 }} 
             exit={{ x: '100%' }} 
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-slate-900 border-l border-slate-700 shadow-2xl z-50 flex flex-col"
+            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-void border-l border-slate-700 shadow-2xl z-50 flex flex-col"
           >
             {/* Header */}
-            <div className="h-20 px-6 flex items-center justify-between border-b border-slate-800 shrink-0 bg-slate-900/50">
+            <div className="h-20 px-6 flex items-center justify-between border-b border-slate-800 shrink-0 bg-void/50">
               <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-lg border ${isAI ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                <div className={`p-3 rounded-lg border ${isAI ? 'bg-axim-teal-500/10 text-axim-teal-400 border-axim-teal-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
                   <SafeIcon icon={isAI ? FiCpu : FiUser} className="text-2xl" />
                 </div>
                 <div>
@@ -66,19 +68,19 @@ export default function AgentDetailPanel() {
             {/* Content */}
             <div className="flex-1 overflow-auto p-6 space-y-8">
               {/* Status Banner */}
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+              <div className="bg-void border border-slate-800 rounded-xl p-4 flex items-center justify-between">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Current Status</div>
                   <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${selectedAgent.operational_capability.current_status === 'IDLE' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full ${selectedAgent.operational_capability?.current_status === 'IDLE' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                     <span className="text-sm font-semibold text-slate-200">
-                      {selectedAgent.operational_capability.current_status.replace('_', ' ')}
+                      {(selectedAgent.operational_capability?.current_status || "UNKNOWN").replace('_', ' ')}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Assigned Vector</div>
-                  <div className="text-xs font-mono text-indigo-400">
+                  <div className="text-xs font-mono text-axim-teal-400">
                     {selectedAgent.operational_capability.assigned_job_id || 'NONE'}
                   </div>
                 </div>
@@ -87,16 +89,16 @@ export default function AgentDetailPanel() {
               {/* Classification Grid */}
               <div>
                 <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
-                  <SafeIcon icon={FiDatabase} className="text-indigo-400" /> Ecosystem Classification
+                  <SafeIcon icon={FiDatabase} className="text-axim-teal-400" /> Ecosystem Classification
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                  <div className="bg-void border border-slate-800 p-3 rounded-lg">
                     <div className="text-[10px] font-bold uppercase text-slate-500 mb-1">Tier</div>
-                    <Badge variant={selectedAgent.identity_profile.engagement_tier === 'INTERNAL' ? 'indigo' : 'rose'}>
+                    <Badge variant={selectedAgent.identity_profile.engagement_tier === 'INTERNAL' ? 'axim-teal' : 'rose'}>
                       {selectedAgent.identity_profile.engagement_tier}
                     </Badge>
                   </div>
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                  <div className="bg-void border border-slate-800 p-3 rounded-lg">
                     <div className="text-[10px] font-bold uppercase text-slate-500 mb-1">Origin</div>
                     <div className="text-xs text-slate-300 flex items-center gap-1.5 break-all">
                       <SafeIcon icon={FiGlobe} className="text-slate-500" /> {selectedAgent.ecosystem_context.ingest_origin}
@@ -104,7 +106,7 @@ export default function AgentDetailPanel() {
                   </div>
                 </div>
 
-                <div className="mt-3 bg-slate-900 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
+                <div className="mt-3 bg-void border border-slate-800 p-3 rounded-lg flex justify-between items-center">
                     <div className="text-[10px] font-bold uppercase text-slate-500">{costLabel}</div>
                     <div className="text-sm text-slate-300 font-mono">{formattedRate}</div>
                 </div>
@@ -116,7 +118,7 @@ export default function AgentDetailPanel() {
                   <SafeIcon icon={FiActivity} className="text-emerald-400" /> Verified Capabilities
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedAgent.operational_capability.skills.map(skill => (
+                  {(selectedAgent.operational_capability?.skills || []).map(skill => (
                     <span key={skill} className="px-3 py-1.5 rounded-md text-xs bg-slate-800 text-slate-300 border border-slate-700 font-mono shadow-sm">
                       {skill}
                     </span>
@@ -135,17 +137,17 @@ export default function AgentDetailPanel() {
                       <span className="text-slate-400">Task Resolution Success Rate</span>
                       <span className="text-emerald-400 font-mono">99.4%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-void rounded-full overflow-hidden">
                       <div className="h-full bg-emerald-500 w-[99.4%]" />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-xs mb-1.5">
                       <span className="text-slate-400">Context Window Utilization</span>
-                      <span className="text-indigo-400 font-mono">42.1%</span>
+                      <span className="text-axim-teal-400 font-mono">42.1%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 w-[42.1%]" />
+                    <div className="h-1.5 w-full bg-void rounded-full overflow-hidden">
+                      <div className="h-full bg-axim-teal-500 w-[42.1%]" />
                     </div>
                   </div>
                 </div>
