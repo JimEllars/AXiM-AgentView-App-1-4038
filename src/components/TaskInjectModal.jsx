@@ -12,23 +12,30 @@ export default function TaskInjectModal() {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
   const [skills, setSkills] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     const skillArray = skills.split(',').map(s => s.trim().toLowerCase().replace(/\s+/g, '_')).filter(Boolean);
     
-    createTaskVector('dev_passport_token_77x', {
-      title,
-      priority,
-      skills: skillArray.length > 0 ? skillArray : ['general_compute']
-    });
+    try {
+      await createTaskVector('dev_passport_token_77x', {
+        title,
+        priority,
+        skills: skillArray.length > 0 ? skillArray : ['general_compute'],
+        idempotency_key: crypto.randomUUID() // Attach cryptographic idempotency key
+      });
 
-    // Reset
-    setTitle('');
-    setPriority('MEDIUM');
-    setSkills('');
+      // Reset
+      setTitle('');
+      setPriority('MEDIUM');
+      setSkills('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -39,7 +46,7 @@ export default function TaskInjectModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setTaskModalOpen(false)}
+            onClick={() => !isSubmitting && setTaskModalOpen(false)}
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
           />
           <motion.div 
@@ -54,8 +61,9 @@ export default function TaskInjectModal() {
                 Inject Task Vector
               </h2>
               <button 
-                onClick={() => setTaskModalOpen(false)}
+                onClick={() => !isSubmitting && setTaskModalOpen(false)}
                 className="text-slate-400 hover:text-slate-200 transition-colors"
+                disabled={isSubmitting}
               >
                 <SafeIcon icon={FiX} className="text-xl" />
               </button>
@@ -71,6 +79,7 @@ export default function TaskInjectModal() {
                   placeholder="e.g. Data Anomaly Resolution"
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -81,6 +90,7 @@ export default function TaskInjectModal() {
                     value={priority}
                     onChange={e => setPriority(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors appearance-none"
+                    disabled={isSubmitting}
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -96,6 +106,7 @@ export default function TaskInjectModal() {
                     onChange={e => setSkills(e.target.value)}
                     placeholder="triage, python"
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -103,17 +114,23 @@ export default function TaskInjectModal() {
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
                 <button 
                   type="button"
-                  onClick={() => setTaskModalOpen(false)}
+                  onClick={() => !isSubmitting && setTaskModalOpen(false)}
                   className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                  disabled={isSubmitting}
+                  className={`flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <SafeIcon icon={FiCheck} />
-                  Inject Vector
+                  {isSubmitting ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <SafeIcon icon={FiCheck} />
+                  )}
+                  {isSubmitting ? 'Injecting...' : 'Inject Vector'}
                 </button>
               </div>
             </form>

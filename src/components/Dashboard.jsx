@@ -5,7 +5,7 @@ import TaskCard from './TaskCard';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity } = FiIcons;
+const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity, FiUserPlus } = FiIcons;
 
 export default function Dashboard() {
   const { activeWorkers, activeTasks, isLoading, searchQuery } = useAgentViewStore();
@@ -29,6 +29,22 @@ export default function Dashboard() {
       t.required_skills.some(s => s.toLowerCase().includes(lowerQ))
     );
   }, [activeTasks, searchQuery]);
+
+  // Gig Board Intake List
+  const pendingIntake = useMemo(() => {
+    return activeWorkers.filter(w =>
+      w.ecosystem_context.ingest_origin === 'GIG_BOARD_SCRAPER' ||
+      w.ecosystem_context.ingest_origin === 'GIG_BOARD_APPLICANT'
+    );
+  }, [activeWorkers]);
+
+  const verifiedWorkers = useMemo(() => {
+    // Everything else that is not in pending intake
+    return filteredWorkers.filter(w =>
+      w.ecosystem_context.ingest_origin !== 'GIG_BOARD_SCRAPER' &&
+      w.ecosystem_context.ingest_origin !== 'GIG_BOARD_APPLICANT'
+    );
+  }, [filteredWorkers]);
 
   if (isLoading && activeWorkers.length === 0) {
     return (
@@ -88,6 +104,21 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Intake Queue */}
+      {pendingIntake.length > 0 && !searchQuery && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5">
+           <div className="flex items-center justify-between mb-4">
+             <h2 className="text-lg font-semibold text-amber-400 flex items-center gap-2">
+               <SafeIcon icon={FiUserPlus} /> Intake / Pending Verification
+             </h2>
+             <span className="text-xs font-mono bg-amber-500/20 text-amber-400 px-2 py-1 rounded">{pendingIntake.length} Pending</span>
+           </div>
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingIntake.map(w => <WorkerCard key={w.agent_id} worker={w} />)}
+           </div>
+        </div>
+      )}
+
       {/* Matrix Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-5">
@@ -97,8 +128,8 @@ export default function Dashboard() {
              </h2>
            </div>
            <div className="space-y-3">
-             {filteredWorkers.length > 0 ? (
-               filteredWorkers.map(w => <WorkerCard key={w.agent_id} worker={w} />)
+             {verifiedWorkers.length > 0 ? (
+               verifiedWorkers.map(w => <WorkerCard key={w.agent_id} worker={w} />)
              ) : (
                <div className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No resources match query.</div>
              )}

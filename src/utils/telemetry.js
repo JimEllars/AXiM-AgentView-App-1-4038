@@ -1,5 +1,12 @@
 // Centralized Telemetry & Triage Loop
 window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
+  let severity = "HIGH";
+
+  // Specific handler for STATE_SYNC_FAILURE for Onyx Swarm interception
+  if (anomalyType === 'STATE_SYNC_FAILURE') {
+    severity = "CRITICAL";
+  }
+
   const telemetryEnvelope = {
     telemetry_envelope: {
       project_id: "AXIM_AGENTVIEW",
@@ -8,7 +15,7 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
     },
     event_payload: {
       event_type: anomalyType.toLowerCase(),
-      severity: "HIGH",
+      severity: severity,
       component_origin: "src/store/useAgentViewStore.js",
       error_message: errorDetails.message || errorDetails.toString(),
       stack_trace: errorDetails.stack || null,
@@ -27,5 +34,5 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
     new CustomEvent('axim-telemetry-fired', { detail: telemetryEnvelope })
   );
   
-  console.warn('[AXiM Onyx Swarm] Telemetry Dispatched:', telemetryEnvelope);
+  console.warn(`[AXiM Onyx Swarm] Telemetry Dispatched (${severity}):`, telemetryEnvelope);
 };

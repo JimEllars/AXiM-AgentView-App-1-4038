@@ -14,6 +14,11 @@ export default function WorkerCard({ worker }) {
   const isAI = identity_profile.classification_type === 'AI_AGENT';
   const isIdle = operational_capability.current_status === 'IDLE';
   
+  const costLabel = isAI ? 'Compute Cost / Task' : 'Hourly Rate';
+  const formattedRate = ecosystem_context.associated_billing_rate_cents
+    ? `$${(ecosystem_context.associated_billing_rate_cents / 100).toFixed(2)}`
+    : '$0.00';
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -53,8 +58,15 @@ export default function WorkerCard({ worker }) {
           <div className={`w-2 h-2 rounded-full shadow-sm ${!isIdle ? 'bg-amber-400 shadow-amber-500/50' : 'bg-emerald-400 shadow-emerald-500/50'}`} />
           <span className="text-slate-400 text-xs font-medium">{operational_capability.current_status.replace('_', ' ')}</span>
         </div>
-        <div className="text-slate-500 text-[11px] flex items-center gap-1.5 font-mono">
-          <SafeIcon icon={FiGlobe} className="text-slate-600" /> {ecosystem_context.ingest_origin.replace(/_/g, ' ')}
+
+        <div className="flex items-center gap-4">
+          <div className="text-slate-500 text-[11px] flex flex-col items-end">
+            <span className="text-[9px] uppercase tracking-wider">{costLabel}</span>
+            <span className="font-mono text-slate-300">{formattedRate}</span>
+          </div>
+          <div className="text-slate-500 text-[11px] flex items-center gap-1.5 font-mono">
+            <SafeIcon icon={FiGlobe} className="text-slate-600" /> {ecosystem_context.ingest_origin.replace(/_/g, ' ')}
+          </div>
         </div>
       </div>
     </motion.div>
