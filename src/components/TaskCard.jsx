@@ -67,11 +67,18 @@ const TaskCard = function({ task, workers }) {
             className="bg-slate-950 border border-indigo-500/30 text-indigo-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
           >
             <option value="">Assign Resource...</option>
-            {workers.filter(w => w.operational_capability.current_status === 'IDLE').map(w => (
-              <option key={w.agent_id} value={w.agent_id}>
-                {w.identity_profile.display_name} ({w.identity_profile.classification_type})
-              </option>
-            ))}
+            {workers.filter(w => w.operational_capability.current_status === 'IDLE').map(w => {
+              const hasAllSkills = task.required_skills.every(skill => w.operational_capability.skills.includes(skill));
+              return (
+                <option
+                  key={w.agent_id}
+                  value={w.agent_id}
+                  className={!hasAllSkills ? "text-slate-500 bg-slate-900" : ""}
+                >
+                  {w.identity_profile.display_name} ({w.identity_profile.classification_type}) {!hasAllSkills ? "(Lacks Required Skills)" : ""}
+                </option>
+              );
+            })}
           </select>
         )}
 
