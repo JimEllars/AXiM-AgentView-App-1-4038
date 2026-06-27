@@ -105,36 +105,66 @@ export default function Dashboard() {
       )}
 
       {/* Intake Queue */}
-      {pendingIntake.length > 0 && !searchQuery && (
+      {!searchQuery && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5">
            <div className="flex items-center justify-between mb-4">
              <h2 className="text-lg font-semibold text-amber-400 flex items-center gap-2">
-               <SafeIcon icon={FiUserPlus} /> Intake / Pending Verification
+               <SafeIcon icon={FiUserPlus} /> Gig Board Pipeline
              </h2>
-             <span className="text-xs font-mono bg-amber-500/20 text-amber-400 px-2 py-1 rounded">{pendingIntake.length} Pending</span>
+             <span className="text-xs font-mono bg-amber-500/20 text-amber-400 px-2 py-1 rounded">
+               {isLoading ? 'Querying...' : `${pendingIntake.length} Pending`}
+             </span>
            </div>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendingIntake.map(w => (
-                <div key={w.agent_id} className="relative group">
-                  <WorkerCard worker={w} />
-                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); alert('Mock: Approve/Deploy ' + w.agent_id); }}
-                      className="bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 p-1.5 rounded-md text-xs font-bold transition-colors"
-                      title="Approve / Deploy"
-                    >
-                      <SafeIcon icon={FiActivity} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); alert('Mock: Reject ' + w.agent_id); }}
-                      className="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 p-1.5 rounded-md text-xs font-bold transition-colors"
-                      title="Reject"
-                    >
-                      <SafeIcon icon={FiClock} />
-                    </button>
+              {isLoading ? (
+                // AXiM Skeleton Loaders
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-void border border-slate-800 rounded-xl p-4 h-[120px] flex flex-col justify-between animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-slate-800/50"></div>
+                      <div className="space-y-2">
+                        <div className="h-3 w-24 bg-slate-800/50 rounded"></div>
+                        <div className="h-2 w-32 bg-slate-800/50 rounded"></div>
+                      </div>
+                    </div>
+                    <div className="h-2 w-16 bg-slate-800/50 rounded"></div>
                   </div>
+                ))
+              ) : pendingIntake.length > 0 ? (
+                pendingIntake.map(w => (
+                  <div key={w.agent_id} className="relative group">
+                    <WorkerCard worker={w} />
+                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log(`[Gig Board Pipeline] API Routing: POST /api/agentview/gigboard/approve/${w.agent_id}`);
+                          alert('Mock: Approve/Deploy ' + w.agent_id);
+                        }}
+                        className="bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 p-1.5 rounded-md text-xs font-bold transition-colors"
+                        title="Approve / Deploy"
+                      >
+                        <SafeIcon icon={FiActivity} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log(`[Gig Board Pipeline] API Routing: POST /api/agentview/gigboard/reject/${w.agent_id}`);
+                          alert('Mock: Reject ' + w.agent_id);
+                        }}
+                        className="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 p-1.5 rounded-md text-xs font-bold transition-colors"
+                        title="Reject"
+                      >
+                        <SafeIcon icon={FiClock} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800/50 rounded-xl">
+                  Intake queue is empty.
                 </div>
-              ))}
+              )}
            </div>
         </div>
       )}
