@@ -1,3 +1,4 @@
+import ErrorBoundary from "./components/ErrorBoundary";
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -35,6 +36,7 @@ export default function App() {
   }, [fetchState, addLog]);
 
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <div className="flex h-screen bg-slate-950 text-slate-50 overflow-hidden font-sans selection:bg-indigo-500/30">
         <Sidebar />
@@ -81,5 +83,6 @@ export default function App() {
       <TaskInjectModal />
       <AgentDetailPanel />
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }

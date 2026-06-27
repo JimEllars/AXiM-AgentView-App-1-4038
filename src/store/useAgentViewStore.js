@@ -155,7 +155,7 @@ export const useAgentViewStore = create((set, get) => ({
     } catch (error) {
       // Revert local state
       set({ activeTasks: previousTasks, activeWorkers: previousWorkers });
-      window.dispatchAgentViewAnomaly('DELEGATION_REJECTION', error);
+      window.dispatchAgentViewAnomaly('DELEGATION_REJECTION', new Error("Network rejection: Task assignment rolled back."));
       get().addLog('DELEGATION', 'Failed to update remote state.', 'ERROR');
     }
   },
@@ -223,7 +223,7 @@ export const useAgentViewStore = create((set, get) => ({
       get().addLog('GIG_BOARD', `Agent ${agentId} deployed.`, 'SUCCESS');
     } catch (error) {
       set({ activeWorkers: previousWorkers }); // Revert
-      window.dispatchAgentViewAnomaly('GIG_BOARD_APPROVAL_FAILURE', error);
+      window.dispatchAgentViewAnomaly('GIG_BOARD_APPROVAL_FAILURE', new Error("Network rejection: Agent approval rolled back."));
       get().addLog('GIG_BOARD', 'Failed to approve agent.', 'ERROR');
     }
   },
@@ -238,7 +238,7 @@ export const useAgentViewStore = create((set, get) => ({
       get().addLog('GIG_BOARD', `Agent ${agentId} rejected.`, 'SUCCESS');
     } catch (error) {
       set({ activeWorkers: previousWorkers }); // Revert
-      window.dispatchAgentViewAnomaly('GIG_BOARD_REJECTION_FAILURE', error);
+      window.dispatchAgentViewAnomaly('GIG_BOARD_REJECTION_FAILURE', new Error("Network rejection: Agent rejection rolled back."));
       get().addLog('GIG_BOARD', 'Failed to reject agent.', 'ERROR');
     }
   },

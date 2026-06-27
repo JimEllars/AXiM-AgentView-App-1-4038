@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useAgentViewStore } from '../store/useAgentViewStore';
 import WorkerCard from './WorkerCard';
 import TaskCard from './TaskCard';
@@ -8,6 +8,16 @@ import * as FiIcons from 'react-icons/fi';
 const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity, FiUserPlus } = FiIcons;
 
 export default function Dashboard() {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const state = useAgentViewStore.getState();
+      if (!state.isCircuitBroken && !state.isLoading) {
+        state.fetchEcosystemState();
+      }
+    }, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
   const { activeWorkers, activeTasks, isLoading, searchQuery, approveIntake, rejectIntake } = useAgentViewStore();
 
   const filteredWorkers = useMemo(() => {
