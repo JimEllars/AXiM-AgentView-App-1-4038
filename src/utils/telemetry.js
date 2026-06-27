@@ -1,4 +1,7 @@
 // Centralized Telemetry & Triage Loop
+const telemetryThrottleCache = {};
+const THROTTLE_WINDOW_MS = 60000;
+
 window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
   let severity = "HIGH";
 
@@ -6,6 +9,20 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
   if (anomalyType === 'STATE_SYNC_FAILURE') {
     severity = "CRITICAL";
   }
+
+  // Throttling logic
+  const now = Date.now();
+  const cacheKey = anomalyType;
+
+  if (telemetryThrottleCache[cacheKey]) {
+    const timeSinceLast = now - telemetryThrottleCache[cacheKey];
+    if (timeSinceLast < THROTTLE_WINDOW_MS) {
+      console.log(`[AXiM Onyx Swarm] Suppressed duplicate ${severity} telemetry for ${anomalyType}`);
+      return; // Suppress duplicate payload
+    }
+  }
+
+  telemetryThrottleCache[cacheKey] = now;
 
   const telemetryEnvelope = {
     telemetry_envelope: {
@@ -17,8 +34,8 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
       event_type: anomalyType.toLowerCase(),
       severity: severity,
       component_origin: "src/store/useAgentViewStore.js",
-      error_message: errorDetails.message || errorDetails.toString(),
-      stack_trace: errorDetails.stack || null,
+      error_message: errorDetails?.message || errorDetails?.toString() || "Unknown error",
+      stack_trace: errorDetails?.stack || null,
       metadata: { window_location: window.location.href }
     }
   };
@@ -43,7 +60,7 @@ window.runSimulatedFailureTest = () => {
 
   // Create a mock error simulating an unreachable Core API
   const mockError = new Error("Failed to fetch from AXiM Core API. Connection Refused.");
-  mockError.stack = "Error: Failed to fetch from AXiM Core API. Connection Refused.\\n    at fetchEcosystemState (src/store/useAgentViewStore.js:68:15)";
+  mockError.stack = "Error: Failed to fetch from AXiM Core API. Connection Refused.\n    at fetchEcosystemState (src/store/useAgentViewStore.js:68:15)";
 
   // Dispatch anomaly specifically for STATE_SYNC_FAILURE
   window.dispatchAgentViewAnomaly('STATE_SYNC_FAILURE', mockError);

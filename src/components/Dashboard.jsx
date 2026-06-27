@@ -8,7 +8,7 @@ import * as FiIcons from 'react-icons/fi';
 const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity, FiUserPlus } = FiIcons;
 
 export default function Dashboard() {
-  const { activeWorkers, activeTasks, isLoading, searchQuery } = useAgentViewStore();
+  const { activeWorkers, activeTasks, isLoading, searchQuery, approveIntake, rejectIntake } = useAgentViewStore();
 
   const filteredWorkers = useMemo(() => {
     if (!searchQuery) return activeWorkers;
@@ -138,8 +138,7 @@ export default function Dashboard() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log(`[Gig Board Pipeline] API Routing: POST /api/agentview/gigboard/approve/${w.agent_id}`);
-                          alert('Mock: Approve/Deploy ' + w.agent_id);
+                          approveIntake(w.agent_id);
                         }}
                         className="bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 p-1.5 rounded-md text-xs font-bold transition-colors"
                         title="Approve / Deploy"
@@ -149,8 +148,7 @@ export default function Dashboard() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log(`[Gig Board Pipeline] API Routing: POST /api/agentview/gigboard/reject/${w.agent_id}`);
-                          alert('Mock: Reject ' + w.agent_id);
+                          rejectIntake(w.agent_id);
                         }}
                         className="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 p-1.5 rounded-md text-xs font-bold transition-colors"
                         title="Reject"

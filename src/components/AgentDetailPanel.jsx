@@ -42,13 +42,13 @@ export default function AgentDetailPanel() {
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-void border-l border-slate-700 shadow-2xl z-50 flex flex-col p-6 items-center justify-center text-center"
+          className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-void border-l-2 border-axim-teal-500 shadow-2xl z-50 flex flex-col p-8 items-center justify-center text-center"
         >
           <div className="text-rose-400 mb-4 text-4xl">
             <SafeIcon icon={FiIcons.FiAlertTriangle} />
           </div>
           <h2 className="text-xl font-bold text-slate-100 mb-2">Unknown Entity</h2>
-          <p className="text-sm text-slate-400 mb-6">The payload for this resource is malformed or missing critical data.</p>
+          <p className="text-sm text-slate-400 mb-6">The payload for this entity is malformed or missing critical ecosystem context.</p>
           <button
             onClick={() => setSelectedAgent(null)}
             className="px-6 py-2 bg-axim-teal-600 hover:bg-axim-teal-500 text-white rounded-lg text-sm font-semibold transition-colors"
