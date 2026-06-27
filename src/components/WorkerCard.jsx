@@ -8,8 +8,37 @@ import * as FiIcons from 'react-icons/fi';
 const { FiCpu, FiUser, FiGlobe } = FiIcons;
 
 export default function WorkerCard({ worker }) {
-  const { identity_profile, operational_capability, ecosystem_context } = worker;
+  const isMalformed = !worker || !worker.identity_profile || !worker.operational_capability || !worker.ecosystem_context;
   const setSelectedAgent = useAgentViewStore(state => state.setSelectedAgent);
+
+  if (isMalformed) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-void border border-rose-500/50 rounded-xl p-4 transition-all group"
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg border bg-rose-500/10 text-rose-400 border-rose-500/20">
+              <SafeIcon icon={FiIcons.FiAlertTriangle} className="text-xl" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-rose-400">Unknown Entity</h3>
+              <div className="text-xs text-slate-500 font-mono mt-0.5">{worker?.agent_id || 'UNKNOWN_ID'}</div>
+            </div>
+          </div>
+          <Badge variant="rose">MALFORMED</Badge>
+        </div>
+        <div className="text-sm text-slate-400 text-center py-2">
+          This payload is missing critical data.
+        </div>
+      </motion.div>
+    );
+  }
+
+  const { identity_profile, operational_capability, ecosystem_context } = worker;
+
   
   const classificationType = identity_profile?.classification_type || 'UNKNOWN';
   const isAI = classificationType === 'AI_AGENT';

@@ -25,7 +25,12 @@ async function apiCall(endpoint, method = 'GET', body = null, token = null) {
   const response = await fetch(`${API_URL}${endpoint}`, options);
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+    const error = new Error(`API error: ${response.status} ${response.statusText}`);
+    error.status = response.status;
+    if (response.status === 401 || response.status === 403) {
+      error.isAuthError = true;
+    }
+    throw error;
   }
 
   return response.json();
@@ -39,10 +44,14 @@ export const useAgentViewStore = create((set, get) => ({
   searchQuery: '',
   selectedAgent: null,
   isTaskModalOpen: false,
+  authError: false,
+  consecutiveFailures: 0,
+  isCircuitBroken: false,
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedAgent: (agent) => set({ selectedAgent: agent }),
   setTaskModalOpen: (isOpen) => set({ isTaskModalOpen: isOpen }),
+  resetCircuitBreaker: () => set({ authError: false, consecutiveFailures: 0, isCircuitBroken: false }),
 
   addLog: (type, message, severity = 'INFO') => {
     const newLog = {
@@ -62,6 +71,11 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
   fetchEcosystemState: async () => {
+    const state = get();
+    if (state.authError || state.isCircuitBroken) {
+      return; // Circuit broken, halt further requests
+    }
+
     set({ isLoading: true });
     
     try {
@@ -71,13 +85,34 @@ export const useAgentViewStore = create((set, get) => ({
         activeWorkers: data.workers || [],
         activeTasks: data.tasks || [],
         systemLogs: data.logs || [],
-        isLoading: false 
+        isLoading: false,
+        consecutiveFailures: 0
       });
       get().addLog('SYNC', 'Ecosystem state synchronized via Worker API.', 'SUCCESS');
     } catch (error) {
-      set({ isLoading: false });
+      if (error.isAuthError) {
+        set({ authError: true, isLoading: false });
+        window.dispatchAgentViewAnomaly('AUTH_FAILURE', error);
+        get().addLog('AUTH', 'Authentication failed. Please re-authenticate via AXiM Passport.', 'ERROR');
+        return;
+      }
+
+      const newFailures = state.consecutiveFailures + 1;
+      const isBroken = newFailures >= 3;
+
+      set({
+        isLoading: false,
+        consecutiveFailures: newFailures,
+        isCircuitBroken: isBroken
+      });
+
       window.dispatchAgentViewAnomaly('STATE_SYNC_FAILURE', error);
-      get().addLog('FALLBACK', 'API unreachable. Using edge cache.', 'WARNING');
+
+      if (isBroken) {
+        get().addLog('CIRCUIT_BREAKER', 'API unreachable. Circuit breaker engaged. Halting sync loops.', 'CRITICAL');
+      } else {
+        get().addLog('FALLBACK', 'API unreachable. Using edge cache.', 'WARNING');
+      }
     }
   },
 
@@ -134,6 +169,30 @@ export const useAgentViewStore = create((set, get) => ({
       await get().fetchEcosystemState();
     } catch (error) {
       window.dispatchAgentViewAnomaly('TASK_REMOVAL_FAILURE', error);
+    }
+  },
+
+  approveIntake: async (agentId) => {
+    get().addLog('GIG_BOARD', `Approving intake for agent ${agentId}...`);
+    try {
+      await apiCall(`/gigboard/approve/${agentId}`, 'POST');
+      await get().fetchEcosystemState();
+      get().addLog('GIG_BOARD', `Agent ${agentId} deployed.`, 'SUCCESS');
+    } catch (error) {
+      window.dispatchAgentViewAnomaly('GIG_BOARD_APPROVAL_FAILURE', error);
+      get().addLog('GIG_BOARD', 'Failed to approve agent.', 'ERROR');
+    }
+  },
+
+  rejectIntake: async (agentId) => {
+    get().addLog('GIG_BOARD', `Rejecting intake for agent ${agentId}...`);
+    try {
+      await apiCall(`/gigboard/reject/${agentId}`, 'POST');
+      await get().fetchEcosystemState();
+      get().addLog('GIG_BOARD', `Agent ${agentId} rejected.`, 'SUCCESS');
+    } catch (error) {
+      window.dispatchAgentViewAnomaly('GIG_BOARD_REJECTION_FAILURE', error);
+      get().addLog('GIG_BOARD', 'Failed to reject agent.', 'ERROR');
     }
   },
 
