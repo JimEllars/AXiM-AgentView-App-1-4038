@@ -103,4 +103,10 @@ const WorkerCard = function({ worker }) {
     </motion.div>
   );
 }
-export default React.memo(WorkerCard);
+const areEqual = (prevProps, nextProps) => {
+  return (
+    prevProps.worker === nextProps.worker ||
+    JSON.stringify(prevProps.worker) === JSON.stringify(nextProps.worker)
+  );
+};
+export default React.memo(WorkerCard, areEqual);

@@ -7,7 +7,7 @@ import * as FiIcons from 'react-icons/fi';
 
 const { FiCheckCircle, FiTrash2, FiClock } = FiIcons;
 
-export default function TaskCard({ task, workers }) {
+const TaskCard = function({ task, workers }) {
   const delegateWorkflow = useAgentViewStore(state => state.delegateWorkflow);
   const completeTask = useAgentViewStore(state => state.completeTask);
   const removeTask = useAgentViewStore(state => state.removeTask);
@@ -102,3 +102,19 @@ export default function TaskCard({ task, workers }) {
     </motion.div>
   );
 }
+
+const areEqual = (prevProps, nextProps) => {
+  if (prevProps.task !== nextProps.task) return false;
+  if (prevProps.task.status !== 'UNASSIGNED') return true;
+
+  const prevIdle = (prevProps.workers || []).filter(w => w.operational_capability?.current_status === 'IDLE');
+  const nextIdle = (nextProps.workers || []).filter(w => w.operational_capability?.current_status === 'IDLE');
+
+  if (prevIdle.length !== nextIdle.length) return false;
+  for (let i = 0; i < prevIdle.length; i++) {
+    if (prevIdle[i].agent_id !== nextIdle[i].agent_id) return false;
+  }
+  return true;
+};
+
+export default React.memo(TaskCard, areEqual);
