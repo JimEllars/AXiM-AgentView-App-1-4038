@@ -7,7 +7,7 @@ import * as FiIcons from 'react-icons/fi';
 
 const { FiCpu, FiUser, FiGlobe } = FiIcons;
 
-export default function WorkerCard({ worker }) {
+const WorkerCard = function({ worker }) {
   const isMalformed = !worker || !worker.identity_profile || !worker.operational_capability || !worker.ecosystem_context;
   const setSelectedAgent = useAgentViewStore(state => state.setSelectedAgent);
 
@@ -103,3 +103,4 @@ export default function WorkerCard({ worker }) {
     </motion.div>
   );
 }
+export default React.memo(WorkerCard);

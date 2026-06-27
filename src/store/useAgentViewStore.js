@@ -173,24 +173,41 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
   approveIntake: async (agentId) => {
+    const previousWorkers = get().activeWorkers;
+    const workerToUpdate = previousWorkers.find(w => w.agent_id === agentId);
+
+    if (workerToUpdate) {
+      const updatedWorker = {
+        ...workerToUpdate,
+        ecosystem_context: {
+          ...workerToUpdate.ecosystem_context,
+          ingest_origin: 'VERIFIED_ACTIVE' // Or some active status
+        }
+      };
+      set({ activeWorkers: previousWorkers.map(w => w.agent_id === agentId ? updatedWorker : w) });
+    }
+
     get().addLog('GIG_BOARD', `Approving intake for agent ${agentId}...`);
     try {
       await apiCall(`/gigboard/approve/${agentId}`, 'POST');
-      await get().fetchEcosystemState();
       get().addLog('GIG_BOARD', `Agent ${agentId} deployed.`, 'SUCCESS');
     } catch (error) {
+      set({ activeWorkers: previousWorkers }); // Revert
       window.dispatchAgentViewAnomaly('GIG_BOARD_APPROVAL_FAILURE', error);
       get().addLog('GIG_BOARD', 'Failed to approve agent.', 'ERROR');
     }
   },
 
   rejectIntake: async (agentId) => {
+    const previousWorkers = get().activeWorkers;
+    set({ activeWorkers: previousWorkers.filter(w => w.agent_id !== agentId) });
+
     get().addLog('GIG_BOARD', `Rejecting intake for agent ${agentId}...`);
     try {
       await apiCall(`/gigboard/reject/${agentId}`, 'POST');
-      await get().fetchEcosystemState();
       get().addLog('GIG_BOARD', `Agent ${agentId} rejected.`, 'SUCCESS');
     } catch (error) {
+      set({ activeWorkers: previousWorkers }); // Revert
       window.dispatchAgentViewAnomaly('GIG_BOARD_REJECTION_FAILURE', error);
       get().addLog('GIG_BOARD', 'Failed to reject agent.', 'ERROR');
     }

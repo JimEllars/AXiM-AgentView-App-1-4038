@@ -30,7 +30,7 @@ export default {
         const coreResponse = await fetch(`https://api.axim.us.com${corePath}${url.search}`, {
           method: request.method,
           headers: coreHeaders,
-          body: request.method !== 'GET' && request.method !== 'HEAD' ? await request.arrayBuffer() : undefined,
+          body: request.method !== 'GET' && request.method !== 'HEAD' ? request.clone().body : undefined,
         });
 
         // We copy the response but replace CORS headers
