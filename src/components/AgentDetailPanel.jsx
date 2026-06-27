@@ -7,8 +7,10 @@ import * as FiIcons from 'react-icons/fi';
 
 const { FiX, FiCpu, FiUser, FiActivity, FiGlobe, FiClock, FiStar, FiDatabase, FiTrash2 } = FiIcons;
 
-export default function AgentDetailPanel() {
-  const { selectedAgent, setSelectedAgent, decommissionNode } = useAgentViewStore();
+const AgentDetailPanel = function() {
+  const selectedAgent = useAgentViewStore(state => state.selectedAgent);
+  const setSelectedAgent = useAgentViewStore(state => state.setSelectedAgent);
+  const decommissionNode = useAgentViewStore(state => state.decommissionNode);
 
   const handleDecommission = () => {
     if (window.confirm(`Are you sure you want to purge ${selectedAgent.identity_profile.display_name} from the ecosystem?`)) {
@@ -209,3 +211,4 @@ export default function AgentDetailPanel() {
     </AnimatePresence>
   );
 }
+export default React.memo(AgentDetailPanel);

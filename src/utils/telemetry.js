@@ -12,7 +12,7 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
 
   // Throttling logic
   const now = Date.now();
-  const cacheKey = anomalyType;
+  const cacheKey = severity === 'CRITICAL' ? 'GLOBAL_CRITICAL' : anomalyType;
 
   if (telemetryThrottleCache[cacheKey]) {
     const timeSinceLast = now - telemetryThrottleCache[cacheKey];
