@@ -119,12 +119,42 @@ export const useAgentViewStore = create((set, get) => ({
   delegateWorkflow: async (passportToken, agentId, taskId) => {
     get().addLog('DELEGATION', `Routing task ${taskId} to node ${agentId}...`);
     
+    const previousTasks = get().activeTasks;
+    const previousWorkers = get().activeWorkers;
+
+    // Optimistic Update
+    const taskToUpdate = previousTasks.find(t => t.task_id === taskId);
+    if (taskToUpdate) {
+      const updatedTask = {
+        ...taskToUpdate,
+        status: 'IN_PROGRESS',
+        assigned_agent: agentId
+      };
+      set({ activeTasks: previousTasks.map(t => t.task_id === taskId ? updatedTask : t) });
+    }
+
+    const workerToUpdate = previousWorkers.find(w => w.agent_id === agentId);
+    if (workerToUpdate) {
+      const updatedWorker = {
+        ...workerToUpdate,
+        operational_capability: {
+          ...workerToUpdate.operational_capability,
+          current_status: 'WORKING'
+        }
+      };
+      set({ activeWorkers: previousWorkers.map(w => w.agent_id === agentId ? updatedWorker : w) });
+    }
+
     try {
       await apiCall('/delegate', 'POST', { agentId, taskId }, passportToken);
       
-      await get().fetchEcosystemState();
+      // Keep optimistic update, no need to fetch if successful, but fetching ensures sync with server
+      // To strictly follow optimistic UI, we might skip fetch or just re-fetch in background.
+      // Instruction says: "modify the local state arrays... Wrap the apiCall in a try/catch. If the edge proxy throws an error, revert the local state... and fire a warning telemetry payload."
       get().addLog('DELEGATION', `Workflow successfully locked to ${agentId}.`, 'SUCCESS');
     } catch (error) {
+      // Revert local state
+      set({ activeTasks: previousTasks, activeWorkers: previousWorkers });
       window.dispatchAgentViewAnomaly('DELEGATION_REJECTION', error);
       get().addLog('DELEGATION', 'Failed to update remote state.', 'ERROR');
     }
