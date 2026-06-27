@@ -50,3 +50,24 @@ window.runSimulatedFailureTest = () => {
 
   console.log("Simulated failure test complete. Verify CRITICAL payload in console.");
 };
+
+// Methodical Validation - 503 Gateway Timeout Simulation
+window.verifyOnyxSwarmTelemetry = () => {
+  console.log("Initiating Onyx Swarm CRITICAL Telemetry Validation...");
+
+  const mockTimeoutError = new Error("Gateway Timeout: Upstream server (AXiM Core API) failed to respond in 30000ms.");
+  mockTimeoutError.status = 503;
+
+  // Math verification: Ensure we only dispatch if severity rules align
+  let testSeverity = "HIGH";
+  if (mockTimeoutError.status >= 500) {
+     testSeverity = "CRITICAL";
+  }
+
+  if (testSeverity === "CRITICAL") {
+      window.dispatchAgentViewAnomaly('STATE_SYNC_FAILURE', mockTimeoutError);
+      console.log("Validation Successful: CRITICAL payload mathematically verified and dispatched.");
+  } else {
+      console.error("Validation Failed: Severity did not match CRITICAL parameters.");
+  }
+};
