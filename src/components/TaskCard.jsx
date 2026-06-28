@@ -1,33 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import Badge from './ui/Badge';
 import { motion } from 'framer-motion';
 import { useAgentViewStore } from '../store/useAgentViewStore';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiCheckCircle, FiTrash2, FiClock } = FiIcons;
+const { FiCheckCircle, FiTrash2, FiClock, FiLoader } = FiIcons;
 
 const TaskCard = function({ task, workers }) {
   const delegateWorkflow = useAgentViewStore(state => state.delegateWorkflow);
   const completeTask = useAgentViewStore(state => state.completeTask);
   const removeTask = useAgentViewStore(state => state.removeTask);
+  const [isAssigning, setIsAssigning] = useState(false);
   
   const isUnassigned = task.status === 'UNASSIGNED';
   const isInProgress = task.status === 'IN_PROGRESS';
   const isCompleted = task.status === 'COMPLETED';
 
-  const handleAssign = (e) => {
+  const handleAssign = async (e) => {
     if (e.target.value) {
-      delegateWorkflow('dev_passport_token_77x', e.target.value, task.task_id);
+      setIsAssigning(true);
+      await delegateWorkflow('dev_passport_token_77x', e.target.value, task.task_id);
+      setIsAssigning(false);
     }
   };
-
-
-  useEffect(() => {
-    if (task.status === 'COMPLETED') {
-      const timeout = setTimeout(() => {
-        removeTask(task.task_id);
-      }, 5000);
 
   useEffect(() => {
     if (task.status === 'COMPLETED') {
@@ -39,13 +35,7 @@ const TaskCard = function({ task, workers }) {
   }, [task.status, task.task_id, removeTask]);
 
   return (
-) => clearTimeout(timeout);
-    }
-  }, [task.status, task.task_id, removeTask]);
-
-  return (
-
-<motion.div
+    <motion.div
       initial={{ opacity: 0, y: 10 }} 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20, transition: { duration: 0.3 } }}
@@ -85,35 +75,33 @@ const TaskCard = function({ task, workers }) {
         </Badge>
         
         {isUnassigned && !isCompleted && (
-          <select 
-            onChange={handleAssign}
-            className="bg-slate-950 border border-indigo-500/30 text-indigo-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-          >
-            <option value="">Assign Resource...</option>
-            {workers.filter(w => w.operational_capability.current_status === 'IDLE').map(w => {
-              const hasAllSkills = task.required_skills.every(skill => w.operational_capability.skills.includes(skill));
+          isAssigning ? (
+            <div className="flex items-center gap-2 text-axim-teal-400 text-xs font-mono">
+              <SafeIcon icon={FiLoader} className="animate-spin" />
+              Locking Vector...
+            </div>
+          ) : (
+            <select
+              onChange={handleAssign}
+              disabled={isAssigning}
+              className="bg-slate-950 border border-indigo-500/30 text-indigo-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">Assign Resource...</option>
+              {workers.filter(w => w.operational_capability.current_status === 'IDLE').map(w => {
+                const hasAllSkills = task.required_skills.every(skill => w.operational_capability.skills.includes(skill));
 
-  useEffect(() => {
-    if (task.status === 'COMPLETED') {
-      const timeout = setTimeout(() => {
-        removeTask(task.task_id);
-      }, 5000);
-      return () => clearTimeout(timeout);
-    }
-  }, [task.status, task.task_id, removeTask]);
-
-  return (
-
-                <option
-                  key={w.agent_id}
-                  value={w.agent_id}
-                  className={!hasAllSkills ? "text-slate-500 bg-slate-900" : ""}
-                >
-                  {w.identity_profile.display_name} ({w.identity_profile.classification_type}) {!hasAllSkills ? "(Lacks Required Skills)" : ""}
-                </option>
-              );
-            })}
-          </select>
+                return (
+                  <option
+                    key={w.agent_id}
+                    value={w.agent_id}
+                    className={!hasAllSkills ? "text-slate-500 bg-slate-900" : ""}
+                  >
+                    {w.identity_profile.display_name} ({w.identity_profile.classification_type}) {!hasAllSkills ? "(Lacks Required Skills)" : ""}
+                  </option>
+                );
+              })}
+            </select>
+          )
         )}
 
         {isInProgress && (

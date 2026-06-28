@@ -117,6 +117,12 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
   delegateWorkflow: async (passportToken, agentId, taskId) => {
+    if (!agentId || typeof agentId !== 'string' || !taskId || typeof taskId !== 'string') {
+      const error = new Error("Malformed payload: agentId and taskId must be valid strings.");
+      window.dispatchAgentViewAnomaly('WARNING', error);
+      return;
+    }
+
     get().addLog('DELEGATION', `Routing task ${taskId} to node ${agentId}...`);
     
     const previousTasks = get().activeTasks;
