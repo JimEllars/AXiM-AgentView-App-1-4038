@@ -26,6 +26,12 @@ const AgentDetailPanel = function() {
     ? `${(selectedAgent.ecosystem_context.associated_billing_rate_cents / 100).toFixed(2)}`
     : '$0.00';
 
+
+  // Node Metrics
+  const successRate = selectedAgent?.operational_capability?.success_rate ?? selectedAgent?.ecosystem_context?.success_rate;
+  const contextWindow = selectedAgent?.operational_capability?.context_window_utilization ?? selectedAgent?.ecosystem_context?.context_window_utilization;
+  const hasMetrics = successRate !== undefined && contextWindow !== undefined;
+
   // Defensive error boundary
   const isMalformed = !selectedAgent?.identity_profile || !selectedAgent?.operational_capability || !selectedAgent?.ecosystem_context;
 
@@ -170,24 +176,32 @@ const AgentDetailPanel = function() {
                   <SafeIcon icon={FiStar} className="text-amber-400" /> Node Performance Index
                 </h3>
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-slate-400">Task Resolution Success Rate</span>
-                      <span className="text-emerald-400 font-mono">99.4%</span>
+                  {!hasMetrics ? (
+                    <div className="flex items-center justify-center py-4 text-axim-teal-400 animate-pulse text-sm font-mono border border-dashed border-axim-teal-500/30 rounded-xl bg-axim-teal-500/5">
+                      Telemetry Calibrating...
                     </div>
-                    <div className="h-1.5 w-full bg-void rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 w-[99.4%]" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-slate-400">Context Window Utilization</span>
-                      <span className="text-axim-teal-400 font-mono">42.1%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-void rounded-full overflow-hidden">
-                      <div className="h-full bg-axim-teal-500 w-[42.1%]" />
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="flex justify-between text-xs mb-1.5">
+                          <span className="text-slate-400">Task Resolution Success Rate</span>
+                          <span className="text-emerald-400 font-mono">{successRate}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-void rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500" style={{ width: `${successRate}%` }} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs mb-1.5">
+                          <span className="text-slate-400">Context Window Utilization</span>
+                          <span className="text-axim-teal-400 font-mono">{contextWindow}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-void rounded-full overflow-hidden">
+                          <div className="h-full bg-axim-teal-500" style={{ width: `${contextWindow}%` }} />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

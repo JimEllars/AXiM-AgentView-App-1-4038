@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAgentViewStore } from '../store/useAgentViewStore';
 import WorkerCard from './WorkerCard';
 import TaskCard from './TaskCard';
@@ -9,13 +10,31 @@ const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity, FiUserPlus } = FiIcons;
 
 export default function Dashboard() {
   useEffect(() => {
-    const interval = setInterval(() => {
+    const fetchStateIfNeeded = () => {
       const state = useAgentViewStore.getState();
       if (!state.isCircuitBroken && !state.isLoading) {
         state.fetchEcosystemState();
       }
+    };
+
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchStateIfNeeded();
+      }
     }, 20000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchStateIfNeeded();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const { activeWorkers, activeTasks, isLoading, searchQuery, approveIntake, rejectIntake } = useAgentViewStore();
@@ -200,11 +219,13 @@ export default function Dashboard() {
              </h2>
            </div>
            <div className="space-y-3">
-             {filteredTasks.length > 0 ? (
-               filteredTasks.map(t => <TaskCard key={t.task_id} task={t} workers={activeWorkers} />)
-             ) : (
-               <div className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No tasks match query.</div>
-             )}
+             <AnimatePresence mode="popLayout">
+               {filteredTasks.length > 0 ? (
+                 filteredTasks.map(t => <TaskCard key={t.task_id} task={t} workers={activeWorkers} />)
+               ) : (
+                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No tasks match query.</motion.div>
+               )}
+             </AnimatePresence>
            </div>
         </div>
       </div>
