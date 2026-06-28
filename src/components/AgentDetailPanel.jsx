@@ -5,7 +5,7 @@ import SafeIcon from '../common/SafeIcon';
 import Badge from './ui/Badge';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiX, FiCpu, FiUser, FiActivity, FiGlobe, FiClock, FiStar, FiDatabase, FiTrash2 } = FiIcons;
+const { FiX, FiCpu, FiUser, FiActivity, FiGlobe, FiClock, FiStar, FiDatabase, FiTrash2, FiFileText } = FiIcons;
 
 const AgentDetailPanel = function() {
   const selectedAgent = useAgentViewStore(state => state.selectedAgent);
@@ -153,6 +153,27 @@ const AgentDetailPanel = function() {
                 <div className="mt-3 bg-void border border-slate-800 p-3 rounded-lg flex justify-between items-center">
                     <div className="text-[10px] font-bold uppercase text-slate-500">{costLabel}</div>
                     <div className="text-sm text-slate-300 font-mono">{formattedRate}</div>
+                </div>
+              </div>
+
+
+              {/* Contract & Compensation */}
+              <div>
+                <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
+                  <SafeIcon icon={FiFileText} className="text-axim-teal-400" /> Contract & Compensation
+                </h3>
+                <div className="bg-void border border-slate-800 p-4 rounded-xl flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <div className="text-[10px] font-bold uppercase text-slate-500">{costLabel}</div>
+                    <div className="text-sm text-slate-300 font-mono">${formattedRate}</div>
+                  </div>
+                  <button
+                    disabled
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-axim-teal-500/10 text-axim-teal-400 border border-axim-teal-500/20 rounded-xl text-sm font-bold opacity-50 cursor-not-allowed"
+                  >
+                    <SafeIcon icon={FiFileText} />
+                    Generate Smart Contract
+                  </button>
                 </div>
               </div>
 
