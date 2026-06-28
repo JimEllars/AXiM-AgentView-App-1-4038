@@ -1,4 +1,5 @@
 // Centralized Telemetry & Triage Loop
+const APP_START_TIME = Date.now();
 const telemetryThrottleCache = {};
 const THROTTLE_WINDOW_MS = 60000;
 
@@ -36,7 +37,12 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
       component_origin: "src/store/useAgentViewStore.js",
       error_message: errorDetails?.message || errorDetails?.toString() || "Unknown error",
       stack_trace: errorDetails?.stack || null,
-      metadata: { window_location: window.location.href }
+      metadata: { window_location: window.location.href },
+      client_metrics: {
+        time_elapsed_ms: Date.now() - APP_START_TIME,
+        screen_resolution: `${window.innerWidth}x${window.innerHeight}`,
+        user_agent: navigator.userAgent
+      }
     }
   };
 

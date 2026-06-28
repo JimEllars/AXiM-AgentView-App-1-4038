@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import Badge from './ui/Badge';
 import { motion } from 'framer-motion';
@@ -22,10 +22,33 @@ const TaskCard = function({ task, workers }) {
     }
   };
 
+
+  useEffect(() => {
+    if (task.status === 'COMPLETED') {
+      const timeout = setTimeout(() => {
+        removeTask(task.task_id);
+      }, 5000);
+
+  useEffect(() => {
+    if (task.status === 'COMPLETED') {
+      const timeout = setTimeout(() => {
+        removeTask(task.task_id);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [task.status, task.task_id, removeTask]);
+
   return (
-    <motion.div 
+) => clearTimeout(timeout);
+    }
+  }, [task.status, task.task_id, removeTask]);
+
+  return (
+
+<motion.div
       initial={{ opacity: 0, y: 10 }} 
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -20, transition: { duration: 0.3 } }}
       className={`bg-slate-900 border ${isCompleted ? 'border-emerald-500/20 opacity-75' : 'border-slate-800'} rounded-xl p-4 hover:border-slate-700 transition-colors group relative`}
     >
       <div className="flex justify-between items-start mb-3">
@@ -69,7 +92,18 @@ const TaskCard = function({ task, workers }) {
             <option value="">Assign Resource...</option>
             {workers.filter(w => w.operational_capability.current_status === 'IDLE').map(w => {
               const hasAllSkills = task.required_skills.every(skill => w.operational_capability.skills.includes(skill));
-              return (
+
+  useEffect(() => {
+    if (task.status === 'COMPLETED') {
+      const timeout = setTimeout(() => {
+        removeTask(task.task_id);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [task.status, task.task_id, removeTask]);
+
+  return (
+
                 <option
                   key={w.agent_id}
                   value={w.agent_id}
