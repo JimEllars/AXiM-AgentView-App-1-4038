@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentViewStore } from '../store/useAgentViewStore';
 import SafeIcon from '../common/SafeIcon';
@@ -8,6 +8,33 @@ const { FiX, FiFileText } = FiIcons;
 
 export default function ContractModal() {
   const { isContractModalOpen, setContractModalOpen, selectedAgent } = useAgentViewStore();
+
+
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setContractModalOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        setContractModalOpen(false);
+      }
+    };
+
+    if (isContractModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isContractModalOpen, setContractModalOpen]);
 
   return (
     <AnimatePresence>
@@ -24,6 +51,7 @@ export default function ContractModal() {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            ref={modalRef}
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-void border border-slate-700 shadow-2xl rounded-2xl z-50 overflow-hidden"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-void/50">
@@ -66,6 +94,34 @@ export default function ContractModal() {
                 </div>
               )}
 
+
+              {/* Form Scaffolding */}
+              <div className="flex flex-col gap-4 mt-4 mb-4">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="scope" className="text-sm font-medium text-slate-300">
+                    Scope of Work
+                  </label>
+                  <textarea
+                    id="scope"
+                    rows="3"
+                    className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-axim-teal-400 focus:ring-1 focus:ring-axim-teal-400 transition-all resize-none"
+                    placeholder="Describe the task or outcome..."
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="compensation" className="text-sm font-medium text-slate-300">
+                    Compensation Limit ($)
+                  </label>
+                  <input
+                    type="number"
+                    id="compensation"
+                    className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-axim-teal-400 focus:ring-1 focus:ring-axim-teal-400 transition-all"
+                    placeholder="e.g. 500"
+                  />
+                </div>
+              </div>
+
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-800/50 mt-4">
                 <button
                   type="button"
@@ -74,6 +130,15 @@ export default function ContractModal() {
                 >
                   Cancel
                 </button>
+
+                <button
+                  type="button"
+                  disabled
+                  className="px-4 py-2 text-sm font-bold bg-axim-teal-500/50 text-void rounded-lg opacity-50 cursor-not-allowed border border-axim-teal-400/50"
+                >
+                  Authorize & Deploy Contract
+                </button>
+
               </div>
             </div>
           </motion.div>
