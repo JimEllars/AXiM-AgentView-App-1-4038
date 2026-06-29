@@ -35,6 +35,9 @@ export default {
 
         // We copy the response but replace CORS headers
         const responseHeaders = new Headers(coreResponse.headers);
+        if (request.method === 'GET') {
+          responseHeaders.set("Cache-Control", "public, max-age=5, s-maxage=5");
+        }
         setCorsHeaders(responseHeaders);
 
         return new Response(coreResponse.body, {

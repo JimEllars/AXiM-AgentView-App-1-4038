@@ -12,12 +12,16 @@ export default function ContractModal() {
   const [scope, setScope] = useState('');
   const [compensation, setCompensation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scopeTouched, setScopeTouched] = useState(false);
+  const [compTouched, setCompTouched] = useState(false);
   const modalRef = useRef(null);
 
   const resetState = () => {
     setScope('');
     setCompensation('');
     setIsSubmitting(false);
+    setScopeTouched(false);
+    setCompTouched(false);
   };
 
   const handleClose = () => {
@@ -129,10 +133,14 @@ export default function ContractModal() {
                     id="scope"
                     value={scope}
                     onChange={(e) => setScope(e.target.value)}
+                    onBlur={() => setScopeTouched(true)}
                     rows="3"
                     className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-axim-teal-400 focus:ring-1 focus:ring-axim-teal-400 transition-all resize-none"
                     placeholder="Describe the task or outcome..."
                   />
+                  {scopeTouched && scope.trim().length === 0 && (
+                    <span className="text-xs text-red-500 mt-1">Scope of Work cannot be empty.</span>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -145,9 +153,13 @@ export default function ContractModal() {
                     min="0"
                     value={compensation}
                     onChange={(e) => setCompensation(e.target.value)}
+                    onBlur={() => setCompTouched(true)}
                     className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-axim-teal-400 focus:ring-1 focus:ring-axim-teal-400 transition-all"
                     placeholder="e.g. 500"
                   />
+                  {compTouched && (compensation === '' || Number(compensation) <= 0) && (
+                    <span className="text-xs text-red-500 mt-1">Compensation limit must be greater than 0.</span>
+                  )}
                 </div>
               </div>
 
