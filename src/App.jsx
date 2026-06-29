@@ -11,6 +11,7 @@ import TaskInjectModal from './components/TaskInjectModal';
 import AgentDetailPanel from './components/AgentDetailPanel';
 import ContractModal from './components/ContractModal';
 import { useAgentViewStore } from './store/useAgentViewStore';
+window.useAgentViewStore = useAgentViewStore;
 import './utils/telemetry';
 import { motion, AnimatePresence } from 'framer-motion';
 
