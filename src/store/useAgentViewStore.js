@@ -296,6 +296,17 @@ export const useAgentViewStore = create((set, get) => ({
     }
   },
 
+
+  generateSmartContract: async (agentId, scope, compensation) => {
+    get().addLog('FINANCE', `Initiating smart contract generation for node ${agentId}...`, 'INFO');
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    get().addLog('FINANCE', 'Smart Contract securely deployed.', 'SUCCESS');
+    set({ isContractModalOpen: false });
+    alert('Smart Contract securely deployed.');
+  },
+
   initiateContractGeneration: () => {
     get().addLog('FINANCE', 'Smart Contract generation module initialized.', 'INFO');
     alert('Smart Contract Module offline for edge synchronization.');

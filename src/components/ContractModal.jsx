@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentViewStore } from '../store/useAgentViewStore';
 import SafeIcon from '../common/SafeIcon';
@@ -7,21 +7,35 @@ import * as FiIcons from 'react-icons/fi';
 const { FiX, FiFileText } = FiIcons;
 
 export default function ContractModal() {
-  const { isContractModalOpen, setContractModalOpen, selectedAgent } = useAgentViewStore();
 
-
+  const { isContractModalOpen, setContractModalOpen, selectedAgent, generateSmartContract } = useAgentViewStore();
+  const [scope, setScope] = useState('');
+  const [compensation, setCompensation] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const modalRef = useRef(null);
+
+  const resetState = () => {
+    setScope('');
+    setCompensation('');
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    resetState();
+    setContractModalOpen(false);
+  };
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        setContractModalOpen(false);
+        handleClose();
       }
     };
 
     const handleClickOutside = (e) => {
       if (modalRef.current && !modalRef.current.contains(e.target)) {
-        setContractModalOpen(false);
+        handleClose();
       }
     };
 
@@ -30,11 +44,21 @@ export default function ContractModal() {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
-    return () => {
+  return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isContractModalOpen, setContractModalOpen]);
+
+  const isValid = scope.trim().length > 0 && Number(compensation) > 0;
+
+  const handleSubmit = async () => {
+    if (!isValid || !selectedAgent || isSubmitting) return;
+    setIsSubmitting(true);
+    await generateSmartContract(selectedAgent.agent_id, scope, compensation);
+    setIsSubmitting(false);
+    handleClose();
+  };
 
   return (
     <AnimatePresence>
@@ -44,7 +68,7 @@ export default function ContractModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setContractModalOpen(false)}
+            onClick={() => handleClose()}
             className="fixed inset-0 bg-void/80 backdrop-blur-sm z-50"
           />
           <motion.div
@@ -60,7 +84,7 @@ export default function ContractModal() {
                 Generate AXiM Smart Contract
               </h2>
               <button
-                onClick={() => setContractModalOpen(false)}
+                onClick={() => handleClose()}
                 className="text-slate-400 hover:text-slate-200 transition-colors"
               >
                 <SafeIcon icon={FiX} className="text-xl" />
@@ -103,6 +127,8 @@ export default function ContractModal() {
                   </label>
                   <textarea
                     id="scope"
+                    value={scope}
+                    onChange={(e) => setScope(e.target.value)}
                     rows="3"
                     className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-axim-teal-400 focus:ring-1 focus:ring-axim-teal-400 transition-all resize-none"
                     placeholder="Describe the task or outcome..."
@@ -116,6 +142,9 @@ export default function ContractModal() {
                   <input
                     type="number"
                     id="compensation"
+                    min="0"
+                    value={compensation}
+                    onChange={(e) => setCompensation(e.target.value)}
                     className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-axim-teal-400 focus:ring-1 focus:ring-axim-teal-400 transition-all"
                     placeholder="e.g. 500"
                   />
@@ -125,19 +154,29 @@ export default function ContractModal() {
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-800/50 mt-4">
                 <button
                   type="button"
-                  onClick={() => setContractModalOpen(false)}
+                  onClick={() => handleClose()}
                   className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
 
+
                 <button
                   type="button"
-                  disabled
-                  className="px-4 py-2 text-sm font-bold bg-axim-teal-500/50 text-void rounded-lg opacity-50 cursor-not-allowed border border-axim-teal-400/50"
+                  onClick={handleSubmit}
+                  disabled={!isValid || isSubmitting}
+                  className={`px-4 py-2 text-sm font-bold bg-axim-teal-500/50 text-void rounded-lg border border-axim-teal-400/50 transition-all ${!isValid || isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-axim-teal-500/80 hover:scale-[1.02]'}`}
                 >
-                  Authorize & Deploy Contract
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-void/30 border-t-void rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'Authorize & Deploy Contract'
+                  )}
                 </button>
+
 
               </div>
             </div>
