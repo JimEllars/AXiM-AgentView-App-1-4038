@@ -50,13 +50,19 @@ export default function Dashboard() {
   }, [activeWorkers, searchQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return activeTasks;
-    const lowerQ = searchQuery.toLowerCase();
-    return activeTasks.filter(t => 
-      t.title.toLowerCase().includes(lowerQ) ||
-      t.task_id.toLowerCase().includes(lowerQ) ||
-      t.required_skills.some(s => s.toLowerCase().includes(lowerQ))
-    );
+    const priorityWeights = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+    let tasks = activeTasks;
+
+    if (searchQuery) {
+      const lowerQ = searchQuery.toLowerCase();
+      tasks = activeTasks.filter(t =>
+        t.title.toLowerCase().includes(lowerQ) ||
+        t.task_id.toLowerCase().includes(lowerQ) ||
+        t.required_skills.some(s => s.toLowerCase().includes(lowerQ))
+      );
+    }
+
+    return [...tasks].sort((a, b) => (priorityWeights[b.priority] || 0) - (priorityWeights[a.priority] || 0));
   }, [activeTasks, searchQuery]);
 
   // Gig Board Intake List

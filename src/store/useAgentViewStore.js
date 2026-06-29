@@ -176,19 +176,30 @@ export const useAgentViewStore = create((set, get) => ({
       return;
     }
 
-    const task = get().activeTasks.find(t => t.task_id === taskId);
-    if (!task) return;
+    const previousTasks = get().activeTasks;
+    const taskToUpdate = previousTasks.find(t => t.task_id === taskId);
+    if (!taskToUpdate) return;
     
     get().addLog('RESOLUTION', `Finalizing task vector ${taskId}...`);
     
+    // Optimistic Update
+    const updatedTask = {
+      ...taskToUpdate,
+      status: 'COMPLETED'
+    };
+    set({ activeTasks: previousTasks.map(t => t.task_id === taskId ? updatedTask : t) });
+
     try {
       await apiCall('/tasks/complete', 'POST', { taskId });
       
-      const agentId = task.assigned_agent;
+      const agentId = taskToUpdate.assigned_agent;
+      // Depending on if we want to fetch the whole state to clear it out, let's keep it to sync
       await get().fetchEcosystemState();
       get().addLog('RESOLUTION', `Task ${taskId} resolved. Resource ${agentId || 'N/A'} released.`, 'SUCCESS');
     } catch (error) {
-      window.dispatchAgentViewAnomaly('TASK_RESOLUTION_FAILURE', error);
+      // Revert local state
+      set({ activeTasks: previousTasks });
+      window.dispatchAgentViewAnomaly('TASK_RESOLUTION_FAILURE', new Error("Network rejection: Task resolution rolled back."));
       get().addLog('RESOLUTION', 'Failed to close task vector.', 'ERROR');
     }
   },

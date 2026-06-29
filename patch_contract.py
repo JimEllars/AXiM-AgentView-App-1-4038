@@ -1,12 +1,9 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAgentViewStore } from '../store/useAgentViewStore';
-import SafeIcon from '../common/SafeIcon';
-import * as FiIcons from 'react-icons/fi';
+import re
 
-const { FiX, FiFileText } = FiIcons;
+with open('src/components/ContractModal.jsx', 'r') as f:
+    content = f.read()
 
-export default function ContractModal() {
+replacement = """export default function ContractModal() {
   const { isContractModalOpen, setContractModalOpen, selectedAgent } = useAgentViewStore();
 
   return (
@@ -81,4 +78,11 @@ export default function ContractModal() {
       )}
     </AnimatePresence>
   );
-}
+}"""
+
+pattern = r"export default function ContractModal\(\) \{.*?\n\}"
+
+content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+
+with open('src/components/ContractModal.jsx', 'w') as f:
+    f.write(content)
