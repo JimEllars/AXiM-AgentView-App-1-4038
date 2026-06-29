@@ -204,12 +204,14 @@ export default function Dashboard() {
                <SafeIcon icon={FiCpu} className="text-axim-teal-400" /> Resource Matrix
              </h2>
            </div>
-           <div className="space-y-3">
-             {verifiedWorkers.length > 0 ? (
-               verifiedWorkers.map(w => <WorkerCard key={w.agent_id} worker={w} />)
-             ) : (
-               <div className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No resources match query.</div>
-             )}
+           <div className="max-h-[600px] overflow-y-auto pr-2">
+             <div className="space-y-3">
+               {verifiedWorkers.length > 0 ? (
+                 verifiedWorkers.map(w => <WorkerCard key={w.agent_id} worker={w} />)
+               ) : (
+                 <div className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No resources match query.</div>
+               )}
+             </div>
            </div>
         </div>
         <div className="space-y-5">
@@ -218,14 +220,16 @@ export default function Dashboard() {
                <SafeIcon icon={FiActivity} className="text-emerald-400" /> Task Vectors
              </h2>
            </div>
-           <div className="space-y-3">
-             <AnimatePresence mode="popLayout">
-               {filteredTasks.length > 0 ? (
-                 filteredTasks.map(t => <TaskCard key={t.task_id} task={t} workers={activeWorkers} />)
-               ) : (
-                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No tasks match query.</motion.div>
-               )}
-             </AnimatePresence>
+           <div className="max-h-[600px] overflow-y-auto pr-2">
+             <div className="space-y-3">
+               <AnimatePresence mode="popLayout">
+                 {filteredTasks.length > 0 ? (
+                   filteredTasks.map(t => <TaskCard key={t.task_id} task={t} workers={activeWorkers} />)
+                 ) : (
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No tasks match query.</motion.div>
+                 )}
+               </AnimatePresence>
+             </div>
            </div>
         </div>
       </div>

@@ -44,9 +44,12 @@ export const useAgentViewStore = create((set, get) => ({
   searchQuery: '',
   selectedAgent: null,
   isTaskModalOpen: false,
+  isContractModalOpen: false,
   authError: false,
   consecutiveFailures: 0,
   isCircuitBroken: false,
+
+  setContractModalOpen: (isOpen) => set({ isContractModalOpen: isOpen }),
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedAgent: (agent) => set({ selectedAgent: agent }),
@@ -167,6 +170,12 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
   completeTask: async (taskId) => {
+    if (!taskId || typeof taskId !== 'string') {
+      const error = new Error("Malformed payload: taskId must be a valid string.");
+      window.dispatchAgentViewAnomaly('VALIDATION_FAILURE', error);
+      return;
+    }
+
     const task = get().activeTasks.find(t => t.task_id === taskId);
     if (!task) return;
     
@@ -185,6 +194,12 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
   decommissionNode: async (agentId) => {
+    if (!agentId || typeof agentId !== 'string') {
+      const error = new Error("Malformed payload: agentId must be a valid string.");
+      window.dispatchAgentViewAnomaly('VALIDATION_FAILURE', error);
+      return;
+    }
+
     get().addLog('DECOMMISSION', `Initiating purge of node ${agentId}...`);
     
     try {
@@ -199,6 +214,12 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
   removeTask: async (taskId) => {
+    if (!taskId || typeof taskId !== 'string') {
+      const error = new Error("Malformed payload: taskId must be a valid string.");
+      window.dispatchAgentViewAnomaly('VALIDATION_FAILURE', error);
+      return;
+    }
+
     get().addLog('CLEANUP', `Removing task vector ${taskId}...`);
     try {
       await apiCall(`/tasks/${taskId}`, 'DELETE');
@@ -262,5 +283,11 @@ export const useAgentViewStore = create((set, get) => ({
       window.dispatchAgentViewAnomaly('TASK_INJECTION_FAILURE', error);
       get().addLog('INJECTION', 'Injection protocol failed.', 'ERROR');
     }
+  },
+
+  initiateContractGeneration: () => {
+    get().addLog('FINANCE', 'Smart Contract generation module initialized.', 'INFO');
+    alert('Smart Contract Module offline for edge synchronization.');
+    set({ isContractModalOpen: true });
   }
 }));

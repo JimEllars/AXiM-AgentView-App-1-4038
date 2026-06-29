@@ -9,6 +9,7 @@ import CoreModules from './components/CoreModules';
 import LogsFeed from './components/LogsFeed';
 import TaskInjectModal from './components/TaskInjectModal';
 import AgentDetailPanel from './components/AgentDetailPanel';
+import ContractModal from './components/ContractModal';
 import { useAgentViewStore } from './store/useAgentViewStore';
 import './utils/telemetry';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,6 +82,7 @@ export default function App() {
       
       {/* Overlays */}
       <TaskInjectModal />
+      <ContractModal />
       <AgentDetailPanel />
     </BrowserRouter>
     </ErrorBoundary>
