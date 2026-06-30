@@ -12,6 +12,7 @@ const AgentDetailPanel = function() {
   const setSelectedAgent = useAgentViewStore(state => state.setSelectedAgent);
   const decommissionNode = useAgentViewStore(state => state.decommissionNode);
   const initiateContractGeneration = useAgentViewStore(state => state.initiateContractGeneration);
+  const activeContracts = useAgentViewStore(state => state.activeContracts);
 
   const handleDecommission = () => {
     if (window.confirm(`Are you sure you want to purge ${selectedAgent.identity_profile.display_name} from the ecosystem?`)) {
@@ -168,13 +169,22 @@ const AgentDetailPanel = function() {
                     <div className="text-[10px] font-bold uppercase text-slate-500">{costLabel}</div>
                     <div className="text-sm text-slate-300 font-mono">${formattedRate}</div>
                   </div>
-                  <button
-
+                                    <button
                     onClick={initiateContractGeneration} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-axim-teal-500/10 text-axim-teal-400 border border-axim-teal-500/20 rounded-xl text-sm font-bold hover:bg-axim-teal-500/20 transition-colors"
                   >
                     <SafeIcon icon={FiFileText} />
                     Generate Smart Contract
                   </button>
+
+                  {activeContracts && activeContracts.filter(c => c.agent_id === selectedAgent.agent_id).map(contract => (
+                    <div key={contract.contract_id} className="mt-3 flex items-center justify-between px-3 py-2 bg-axim-teal-500/10 border border-axim-teal-500/30 rounded-lg text-axim-teal-400">
+                      <div className="flex items-center gap-2">
+                        <SafeIcon icon={FiFileText} className="text-sm" />
+                        <span className="text-xs font-mono">{contract.contract_id.substring(0, 8)}...</span>
+                      </div>
+                      <span className="text-xs font-bold">${contract.compensation_limit} Limit</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 

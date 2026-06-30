@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import Badge from './ui/Badge';
 import { motion } from 'framer-motion';
@@ -10,6 +10,21 @@ const { FiCpu, FiUser, FiGlobe } = FiIcons;
 const WorkerCard = function({ worker }) {
   const isMalformed = !worker || !worker.identity_profile || !worker.operational_capability || !worker.ecosystem_context;
   const setSelectedAgent = useAgentViewStore(state => state.setSelectedAgent);
+
+    const [activeCostCents, setActiveCostCents] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (worker?.operational_capability?.current_status === 'WORKING') {
+      const ratePerSecond = (worker?.ecosystem_context?.associated_billing_rate_cents || 0) / 3600;
+      interval = setInterval(() => {
+        setActiveCostCents(prev => prev + ratePerSecond);
+      }, 1000);
+    } else {
+      setActiveCostCents(0);
+    }
+    return () => clearInterval(interval);
+  }, [worker?.operational_capability?.current_status, worker?.ecosystem_context?.associated_billing_rate_cents]);
 
   if (isMalformed) {
     return (
@@ -38,6 +53,9 @@ const WorkerCard = function({ worker }) {
   }
 
   const { identity_profile, operational_capability, ecosystem_context } = worker;
+
+
+
 
   
   const classificationType = identity_profile?.classification_type || 'UNKNOWN';
@@ -82,9 +100,9 @@ const WorkerCard = function({ worker }) {
             </span>
           ))}
         </div>
-        {operational_capability?.current_status === 'WORKING' && (
+                {operational_capability?.current_status === 'WORKING' && (
           <div className="mt-2 text-axim-teal-400 font-mono text-[10px] animate-pulse bg-axim-teal-500/10 p-1.5 rounded w-fit">
-            [ACTIVE COMPUTE: INITIATING...]
+            [ACTIVE COMPUTE: ${(activeCostCents / 100).toFixed(2)}]
           </div>
         )}
       </div>
