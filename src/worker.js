@@ -18,6 +18,37 @@ export default {
     // Securely inject the internal AXiM key
     const internalAximKey = env.AXIM_INTERNAL_KEY || 'development_mock_key';
 
+    // Route /api/v1/contracts for smart contract generation
+    if (request.method === "POST" && url.pathname === "/api/v1/contracts") {
+      try {
+        const bodyText = await request.text();
+        const payload = JSON.parse(bodyText);
+        const { agentId, scope, compensation } = payload;
+
+        // Mocking the contract creation
+        const contractId = crypto.randomUUID();
+
+        const responsePayload = {
+          contract_id: contractId,
+          agent_id: agentId,
+          scope,
+          compensation_limit: compensation,
+          status: 'ACTIVE',
+          created_at: new Date().toISOString()
+        };
+
+        return new Response(JSON.stringify(responsePayload), {
+          status: 201,
+          headers: getCorsHeaders()
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Invalid payload for contract generation." }), {
+          status: 400,
+          headers: getCorsHeaders()
+        });
+      }
+    }
+
     // Route /api/agentview/* to AXiM Core API
     if (url.pathname.startsWith("/api/agentview/")) {
       const corePath = url.pathname.replace("/api/agentview", "/v1/internal/orchestration");

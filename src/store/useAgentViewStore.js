@@ -39,6 +39,7 @@ async function apiCall(endpoint, method = 'GET', body = null, token = null) {
 export const useAgentViewStore = create((set, get) => ({
   activeWorkers: [],
   activeTasks: [],
+  activeContracts: [],
   systemLogs: [],
   isLoading: false,
   searchQuery: '',
@@ -300,11 +301,31 @@ export const useAgentViewStore = create((set, get) => ({
   generateSmartContract: async (agentId, scope, compensation) => {
     get().addLog('FINANCE', `Initiating smart contract generation for node ${agentId}...`, 'INFO');
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch('/api/v1/contracts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer dev_passport_token_77x'
+        },
+        body: JSON.stringify({ agentId, scope, compensation })
+      });
 
-    get().addLog('FINANCE', 'Smart Contract securely deployed.', 'SUCCESS');
-    set({ isContractModalOpen: false });
-    alert('Smart Contract securely deployed.');
+      if (!response.ok) throw new Error('Contract generation failed');
+
+      const contractData = await response.json();
+
+      set(state => ({
+        activeContracts: [...state.activeContracts, contractData],
+        isContractModalOpen: false
+      }));
+
+      get().addLog('FINANCE', 'Smart Contract securely deployed.', 'SUCCESS');
+      // alert('Smart Contract securely deployed.');
+    } catch (error) {
+      window.dispatchAgentViewAnomaly('CONTRACT_FAILURE', error);
+      get().addLog('FINANCE', 'Failed to deploy smart contract.', 'ERROR');
+    }
   },
 
   initiateContractGeneration: () => {
