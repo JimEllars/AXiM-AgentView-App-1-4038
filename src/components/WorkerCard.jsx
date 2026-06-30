@@ -82,6 +82,11 @@ const WorkerCard = function({ worker }) {
             </span>
           ))}
         </div>
+        {operational_capability?.current_status === 'WORKING' && (
+          <div className="mt-2 text-axim-teal-400 font-mono text-[10px] animate-pulse bg-axim-teal-500/10 p-1.5 rounded w-fit">
+            [ACTIVE COMPUTE: INITIATING...]
+          </div>
+        )}
       </div>
       
       <div className="flex justify-between items-center pt-3 border-t border-slate-800/50 text-sm">

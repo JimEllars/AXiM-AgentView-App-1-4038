@@ -12,20 +12,17 @@ export default function Header() {
   const { searchQuery, setSearchQuery, isCircuitBroken, resetCircuitBreaker } = useAgentViewStore();
 
 
-  const [localQuery, setLocalQuery] = useState(searchQuery);
-  const debounceTimeout = useRef(null);
+  const [localQuery, setLocalQuery] = useState(searchQuery || '');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(localQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [localQuery, setSearchQuery]);
 
   const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setLocalQuery(val);
-
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-
-    debounceTimeout.current = setTimeout(() => {
-      setSearchQuery(val);
-    }, 300);
+    setLocalQuery(e.target.value);
   };
 
   return (
