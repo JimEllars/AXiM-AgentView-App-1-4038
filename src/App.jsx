@@ -17,11 +17,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function App() {
   const fetchState = useAgentViewStore(state => state.fetchEcosystemState);
+  const connectEcosystemStream = useAgentViewStore(state => state.connectEcosystemStream);
+  const disconnectEcosystemStream = useAgentViewStore(state => state.disconnectEcosystemStream);
   const addLog = useAgentViewStore(state => state.addLog);
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
     fetchState('dev_passport_token_77x');
+    connectEcosystemStream('dev_passport_token_77x');
 
     const handleTelemetry = (e) => {
       const id = Date.now();
@@ -41,7 +44,10 @@ export default function App() {
     };
 
     window.addEventListener('axim-telemetry-fired', handleTelemetry);
-    return () => window.removeEventListener('axim-telemetry-fired', handleTelemetry);
+    return () => {
+      window.removeEventListener('axim-telemetry-fired', handleTelemetry);
+      disconnectEcosystemStream();
+    };
   }, [fetchState, addLog]);
 
   return (

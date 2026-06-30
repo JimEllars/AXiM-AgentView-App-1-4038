@@ -14,16 +14,20 @@ const WorkerCard = function({ worker }) {
     const [activeCostCents, setActiveCostCents] = useState(0);
 
   useEffect(() => {
-    let interval;
+    let intervalId;
     if (worker?.operational_capability?.current_status === 'WORKING') {
       const ratePerSecond = (worker?.ecosystem_context?.associated_billing_rate_cents || 0) / 3600;
-      interval = setInterval(() => {
+      intervalId = setInterval(() => {
         setActiveCostCents(prev => prev + ratePerSecond);
       }, 1000);
     } else {
       setActiveCostCents(0);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [worker?.operational_capability?.current_status, worker?.ecosystem_context?.associated_billing_rate_cents]);
 
   if (isMalformed) {

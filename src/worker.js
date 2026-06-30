@@ -55,6 +55,14 @@ export default {
           created_at: new Date().toISOString()
         };
 
+        if (env.AXIM_EDGE_KV) {
+          try {
+            await env.AXIM_EDGE_KV.put(contractId, JSON.stringify(responsePayload), { expirationTtl: 86400 });
+          } catch (kvError) {
+            console.error("KV put failed:", kvError);
+          }
+        }
+
         return new Response(JSON.stringify(responsePayload), {
           status: 201,
           headers: getCorsHeaders()
