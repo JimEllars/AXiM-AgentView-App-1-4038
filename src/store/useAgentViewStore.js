@@ -49,13 +49,18 @@ export const useAgentViewStore = create((set, get) => ({
   authError: false,
   consecutiveFailures: 0,
   isCircuitBroken: false,
+  wsInstance: null,
+  wsReconnectAttempts: 0,
 
   setContractModalOpen: (isOpen) => set({ isContractModalOpen: isOpen }),
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedAgent: (agent) => set({ selectedAgent: agent }),
   setTaskModalOpen: (isOpen) => set({ isTaskModalOpen: isOpen }),
-  resetCircuitBreaker: () => set({ authError: false, consecutiveFailures: 0, isCircuitBroken: false }),
+  resetCircuitBreaker: () => {
+    set({ authError: false, consecutiveFailures: 0, isCircuitBroken: false, wsReconnectAttempts: 0 });
+    get().connectEcosystemStream();
+  },
 
   addLog: (type, message, severity = 'INFO') => {
     const newLog = {
@@ -72,6 +77,89 @@ export const useAgentViewStore = create((set, get) => ({
     apiCall('/logs', 'POST', newLog).catch(e => {
         console.error('Failed to persist log to worker', e);
     });
+  },
+
+
+  connectEcosystemStream: () => {
+    const state = get();
+    if (state.isCircuitBroken) return;
+
+    // Close existing connection if any
+    if (state.wsInstance) {
+      state.wsInstance.close();
+    }
+
+    const ws = new WebSocket('wss://api.axim.us.com/v1/stream');
+
+    ws.onopen = () => {
+      set({ wsReconnectAttempts: 0, wsInstance: ws });
+      get().addLog('WS_SYNC', 'Edge proxy stream connected.', 'SUCCESS');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const { type, payload } = JSON.parse(event.data);
+
+        if (type === 'TASK_STATUS_CHANGED') {
+          set((state) => ({
+            activeTasks: state.activeTasks.map(t => t.task_id === payload.taskId ? { ...t, status: payload.status } : t)
+          }));
+        } else if (type === 'WORKER_STATUS_CHANGED') {
+          set((state) => ({
+            activeWorkers: state.activeWorkers.map(w => w.agent_id === payload.agentId ? {
+              ...w,
+              operational_capability: { ...w.operational_capability, current_status: payload.status }
+            } : w)
+          }));
+        } else if (type === 'CONTRACT_ACTIVATED') {
+          set((state) => ({
+            activeContracts: state.activeContracts.map(c => c.contract_id === payload.contractId ? { ...c, status: 'ACTIVE' } : c)
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to parse WS message', err);
+      }
+    };
+
+    ws.onclose = () => {
+      get().handleWsDisconnect();
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      // Let onclose handle reconnect logic
+    };
+
+    set({ wsInstance: ws });
+  },
+
+  handleWsDisconnect: () => {
+    const state = get();
+    if (state.isCircuitBroken) return;
+
+    const attempts = state.wsReconnectAttempts;
+    if (attempts >= 3) {
+      set({ isCircuitBroken: true });
+      get().addLog('CIRCUIT_BREAKER', 'WebSocket unreachable. Circuit breaker engaged. Halting sync loops.', 'CRITICAL');
+      window.dispatchAgentViewAnomaly('CRITICAL', new Error('WebSocket connection dropped permanently.'));
+    } else {
+      const delay = Math.pow(2, attempts) * 1000;
+      set({ wsReconnectAttempts: attempts + 1 });
+      get().addLog('WS_RECONNECT', `WebSocket disconnected. Reconnecting in ${delay}ms...`, 'WARNING');
+      setTimeout(() => {
+        get().connectEcosystemStream();
+      }, delay);
+    }
+  },
+
+  disconnectEcosystemStream: () => {
+    const state = get();
+    if (state.wsInstance) {
+      // Temporarily remove onclose to prevent reconnect logic from firing when intentionally pausing
+      state.wsInstance.onclose = null;
+      state.wsInstance.close();
+      set({ wsInstance: null });
+    }
   },
 
   fetchEcosystemState: async () => {

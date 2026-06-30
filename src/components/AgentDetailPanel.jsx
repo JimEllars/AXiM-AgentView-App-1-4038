@@ -177,14 +177,14 @@ const AgentDetailPanel = function() {
                   </button>
 
                   {activeContracts && activeContracts.filter(c => c.agent_id === selectedAgent.agent_id).map(contract => (
-                    <div key={contract.contract_id} className="mt-3 flex items-center justify-between px-3 py-2 bg-axim-teal-500/10 border border-axim-teal-500/30 rounded-lg text-axim-teal-400">
+                    <div key={contract.contract_id} className={`mt-3 flex items-center justify-between px-3 py-2 border rounded-lg ${contract.status === 'PENDING' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-axim-teal-500/10 border-axim-teal-500/30 text-axim-teal-400'}`}>
                       <div className="flex items-center gap-2">
                         <SafeIcon icon={FiFileText} className="text-sm" />
                         <span className="text-xs font-mono">{contract.contract_id.substring(0, 8)}...</span>
                       </div>
                       <span className="text-xs font-bold">${contract.compensation_limit} Limit</span>
                     </div>
-                  ))}
+))}
                 </div>
               </div>
 
