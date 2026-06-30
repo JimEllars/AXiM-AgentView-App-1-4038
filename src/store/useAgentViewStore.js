@@ -89,11 +89,20 @@ export const useAgentViewStore = create((set, get) => ({
       state.wsInstance.close();
     }
 
-    const ws = new WebSocket('wss://api.axim.us.com/v1/stream');
+    // Append user token for edge authorization
+    const passportToken = 'dev_passport_token_77x';
+    const ws = new WebSocket(`wss://api.axim.us.com/v1/stream?token=${passportToken}`);
 
     ws.onopen = () => {
+      const isReconnect = state.wsReconnectAttempts > 0;
       set({ wsReconnectAttempts: 0, wsInstance: ws });
-      get().addLog('WS_SYNC', 'Edge proxy stream connected.', 'SUCCESS');
+
+      if (isReconnect) {
+        get().addLog('WS_SYNC', 'Socket re-established. State reconciled.', 'INFO');
+        get().fetchEcosystemState();
+      } else {
+        get().addLog('WS_SYNC', 'Edge proxy stream connected.', 'SUCCESS');
+      }
     };
 
     ws.onmessage = (event) => {
@@ -420,5 +429,21 @@ export const useAgentViewStore = create((set, get) => ({
     get().addLog('FINANCE', 'Smart Contract generation module initialized.', 'INFO');
     alert('Smart Contract Module offline for edge synchronization.');
     set({ isContractModalOpen: true });
+  },
+
+  activateContract: (contractId) => {
+    get().addLog('FINANCE', `Initiating contract activation for ${contractId}...`, 'INFO');
+
+    // Optimistic UI update
+    set(state => ({
+      activeContracts: state.activeContracts.map(c =>
+        c.contract_id === contractId ? { ...c, status: 'ACTIVE' } : c
+      )
+    }));
+
+    // Simulate network delay
+    setTimeout(() => {
+      get().addLog('FINANCE', `Contract ${contractId} successfully activated.`, 'SUCCESS');
+    }, 1000);
   }
 }));

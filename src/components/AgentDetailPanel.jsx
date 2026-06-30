@@ -13,6 +13,17 @@ const AgentDetailPanel = function() {
   const decommissionNode = useAgentViewStore(state => state.decommissionNode);
   const initiateContractGeneration = useAgentViewStore(state => state.initiateContractGeneration);
   const activeContracts = useAgentViewStore(state => state.activeContracts);
+  const activateContract = useAgentViewStore(state => state.activateContract);
+
+  const [activatingId, setActivatingId] = React.useState(null);
+
+  const handleActivate = async (contractId) => {
+    setActivatingId(contractId);
+    activateContract(contractId);
+    setTimeout(() => {
+      setActivatingId(null);
+    }, 1000);
+  };
 
   const handleDecommission = () => {
     if (window.confirm(`Are you sure you want to purge ${selectedAgent.identity_profile.display_name} from the ecosystem?`)) {
@@ -182,7 +193,25 @@ const AgentDetailPanel = function() {
                         <SafeIcon icon={FiFileText} className="text-sm" />
                         <span className="text-xs font-mono">{contract.contract_id.substring(0, 8)}...</span>
                       </div>
-                      <span className="text-xs font-bold">${contract.compensation_limit} Limit</span>
+                      <div className="flex items-center gap-3">
+                        {contract.status === 'PENDING' && (
+                          <button
+                            onClick={() => handleActivate(contract.contract_id)}
+                            disabled={activatingId === contract.contract_id}
+                            className="text-[10px] uppercase font-bold px-2 py-1 bg-axim-teal-500/10 text-axim-teal-400 border border-axim-teal-500/20 rounded hover:bg-axim-teal-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            {activatingId === contract.contract_id ? (
+                              <>
+                                <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-axim-teal-400"></span>
+                                Activating...
+                              </>
+                            ) : (
+                              'Activate'
+                            )}
+                          </button>
+                        )}
+                        <span className="text-xs font-bold">${contract.compensation_limit} Limit</span>
+                      </div>
                     </div>
 ))}
                 </div>

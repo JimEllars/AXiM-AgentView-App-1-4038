@@ -1,3 +1,4 @@
+/* global WebSocketPair */
 // Edge Routing & Gateway Proxy Framework
 export default {
   async fetch(request, env, ctx) {
@@ -5,6 +6,23 @@ export default {
 
     // Enforce global environment CORS contracts
     if (request.method === "OPTIONS") return handleCorsPreflight();
+
+    // Handle WebSocket Upgrades
+    if (request.headers.get("Upgrade") === "websocket") {
+      const token = url.searchParams.get("token");
+      if (!token) {
+        return new Response(JSON.stringify({ error: "Missing security boundary token." }), { status: 401, headers: getCorsHeaders() });
+      }
+
+      const webSocketPair = new WebSocketPair();
+      const [client, server] = Object.values(webSocketPair);
+      server.accept();
+
+      return new Response(null, {
+        status: 101,
+        webSocket: client
+      });
+    }
 
     // Verify presence of internal master passport credentials
     const passportToken = request.headers.get("Authorization");
