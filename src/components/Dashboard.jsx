@@ -13,27 +13,34 @@ export default function Dashboard() {
     const fetchStateIfNeeded = () => {
       const state = useAgentViewStore.getState();
       if (!state.isCircuitBroken && !state.isLoading) {
-        state.fetchEcosystemState();
+        state.fetchEcosystemState().then(() => {
+          if (!state.wsInstance && !document.hidden) {
+            state.connectEcosystemStream();
+          }
+        });
       }
     };
 
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchStateIfNeeded();
-      }
-    }, 20000);
+    if (!document.hidden) {
+      fetchStateIfNeeded();
+    }
 
     const handleVisibilityChange = () => {
+      const state = useAgentViewStore.getState();
       if (!document.hidden) {
-        fetchStateIfNeeded();
+        if (!state.wsInstance && !state.isCircuitBroken) {
+          state.connectEcosystemStream();
+        }
+      } else {
+        state.disconnectEcosystemStream();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      useAgentViewStore.getState().disconnectEcosystemStream();
     };
   }, []);
 
