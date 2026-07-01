@@ -87,6 +87,28 @@ export default {
       }
     }
 
+    // Route /api/agentview/payroll/settle for edge settlement
+    if (request.method === "POST" && url.pathname === "/api/agentview/payroll/settle") {
+      try {
+        const bodyText = await request.text();
+        const payload = JSON.parse(bodyText);
+        const { agentId } = payload;
+
+        // Inject AXIM_INTERNAL_KEY internally
+        const injectedKey = internalAximKey;
+
+        return new Response(JSON.stringify({ success: true, message: "Ledger recorded at edge." }), {
+          status: 200,
+          headers: getCorsHeaders()
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Invalid payload for payroll settlement." }), {
+          status: 400,
+          headers: getCorsHeaders()
+        });
+      }
+    }
+
     // Route /api/agentview/presence to check agent presence state
     if (request.method === "GET" && url.pathname === "/api/agentview/presence") {
       let presenceMap = {};

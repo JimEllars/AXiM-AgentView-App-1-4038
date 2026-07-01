@@ -55,18 +55,42 @@ export const useAgentViewStore = create((set, get) => ({
   wsPingInterval: null,
 
 
-  settlePayroll: async (agentId) => {
+    settlePayroll: async (agentId) => {
     get().addLog('PAYROLL', 'Initiating ledger settlement for node...', 'INFO');
 
-    // Simulate 1500ms network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const previousContracts = get().activeContracts;
+    const previousWorkers = get().activeWorkers;
 
-    set(state => ({
-      activeContracts: state.activeContracts.filter(c => c.agent_id !== agentId || c.status !== 'ACTIVE'),
+    // Optimistic Update: Remove active contract and set worker to IDLE
+    const updatedContracts = previousContracts.filter(c => c.agent_id !== agentId || c.status !== 'ACTIVE');
+
+    const workerToUpdate = previousWorkers.find(w => w.agent_id === agentId);
+    let updatedWorkers = previousWorkers;
+    if (workerToUpdate) {
+      const updatedWorker = {
+        ...workerToUpdate,
+        operational_capability: {
+          ...workerToUpdate.operational_capability,
+          current_status: 'IDLE'
+        }
+      };
+      updatedWorkers = previousWorkers.map(w => w.agent_id === agentId ? updatedWorker : w);
+    }
+
+    set({
+      activeContracts: updatedContracts,
+      activeWorkers: updatedWorkers,
       isPayrollModalOpen: false
-    }));
+    });
 
-    get().addLog('PAYROLL', 'Ledger closed and payment queued.', 'SUCCESS');
+    try {
+      await apiCall('/payroll/settle', 'POST', { agentId });
+      get().addLog('PAYROLL', 'Ledger closed and payment queued.', 'SUCCESS');
+    } catch (error) {
+      set({ activeContracts: previousContracts, activeWorkers: previousWorkers });
+      window.dispatchAgentViewAnomaly('PAYROLL_SETTLEMENT_FAILURE', new Error("Network rejection: Payroll settlement rolled back."));
+      get().addLog('PAYROLL', 'Failed to settle payroll.', 'ERROR');
+    }
   },
 
   setContractModalOpen: (isOpen) => set({ isContractModalOpen: isOpen }),
@@ -98,9 +122,13 @@ export const useAgentViewStore = create((set, get) => ({
   },
 
 
-  connectEcosystemStream: () => {
+    connectEcosystemStream: () => {
     const state = get();
     if (state.isCircuitBroken) return;
+
+    if (state.wsInstance && (state.wsInstance.readyState === WebSocket.OPEN || state.wsInstance.readyState === WebSocket.CONNECTING)) {
+      return; // Prevent duplicate connections
+    }
 
     // Close existing connection if any
     if (state.wsInstance) {
@@ -207,6 +235,10 @@ export const useAgentViewStore = create((set, get) => ({
 
   disconnectEcosystemStream: () => {
     const state = get();
+    if (state.presenceInterval) {
+      clearInterval(state.presenceInterval);
+      set({ presenceInterval: null });
+    }
     if (state.wsPingInterval) {
       clearInterval(state.wsPingInterval);
       set({ wsPingInterval: null });
@@ -225,6 +257,7 @@ export const useAgentViewStore = create((set, get) => ({
 
 
   syncPresenceState: async () => {
+    if (get().isCircuitBroken || document.hidden) return;
     try {
       const response = await fetch('/api/agentview/presence', {
         headers: { 'Authorization': 'Bearer dev_passport_token_77x' }
