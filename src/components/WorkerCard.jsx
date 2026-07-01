@@ -82,8 +82,9 @@ const WorkerCard = function({ worker }) {
     >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-lg border transition-colors ${isAI ? 'bg-axim-teal-500/10 text-axim-teal-400 border-axim-teal-500/20 group-hover:border-axim-teal-500/50' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:border-emerald-500/50'}`}>
+          <div className={`relative p-2.5 rounded-lg border transition-colors ${isAI ? 'bg-axim-teal-500/10 text-axim-teal-400 border-axim-teal-500/20 group-hover:border-axim-teal-500/50' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:border-emerald-500/50'}`}>
             <SafeIcon icon={isAI ? FiCpu : FiUser} className="text-xl" />
+            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-void ${worker.presence_state === 'ONLINE' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : worker.presence_state === 'BUSY' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-slate-600'}`} />
           </div>
           <div>
             <h3 className="font-semibold text-slate-200 group-hover:text-axim-teal-300 transition-colors">{identity_profile.display_name}</h3>

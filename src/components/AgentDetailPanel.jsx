@@ -104,8 +104,9 @@ const AgentDetailPanel = function() {
             {/* Header */}
             <div className="h-20 px-6 flex items-center justify-between border-b border-slate-800 shrink-0 bg-void/50">
               <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-lg border ${isAI ? 'bg-axim-teal-500/10 text-axim-teal-400 border-axim-teal-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                <div className={`relative p-3 rounded-lg border ${isAI ? 'bg-axim-teal-500/10 text-axim-teal-400 border-axim-teal-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
                   <SafeIcon icon={isAI ? FiCpu : FiUser} className="text-2xl" />
+                  <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-void ${selectedAgent.presence_state === 'ONLINE' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : selectedAgent.presence_state === 'BUSY' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-slate-600'}`} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-100 leading-tight">

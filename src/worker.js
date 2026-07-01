@@ -87,6 +87,30 @@ export default {
       }
     }
 
+    // Route /api/agentview/presence to check agent presence state
+    if (request.method === "GET" && url.pathname === "/api/agentview/presence") {
+      let presenceMap = {};
+      if (env.KV_BINDING) {
+        try {
+          const listResult = await env.KV_BINDING.list();
+          for (const key of listResult.keys) {
+            // KV returns basic metadata in list, we could assume anything in KV is ONLINE or read the value.
+            // As per instruction: return a JSON map of agent IDs to their current presence status ("ONLINE", "BUSY", or "OFFLINE").
+            // Let's read the value to see if it says BUSY or ONLINE, default ONLINE.
+            // A more optimized way if the status is stored in metadata would be list({}).
+            const value = await env.KV_BINDING.get(key.name);
+            presenceMap[key.name] = value || "ONLINE";
+          }
+        } catch (error) {
+          console.error("KV presence listing failed:", error);
+        }
+      }
+      return new Response(JSON.stringify(presenceMap), {
+        status: 200,
+        headers: getCorsHeaders()
+      });
+    }
+
     // Route /api/agentview/* to AXiM Core API
     if (url.pathname.startsWith("/api/agentview/")) {
       const corePath = url.pathname.replace("/api/agentview", "/v1/internal/orchestration");

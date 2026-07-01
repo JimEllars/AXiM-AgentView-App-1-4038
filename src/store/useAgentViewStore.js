@@ -54,6 +54,21 @@ export const useAgentViewStore = create((set, get) => ({
   wsReconnectAttempts: 0,
   wsPingInterval: null,
 
+
+  settlePayroll: async (agentId) => {
+    get().addLog('PAYROLL', 'Initiating ledger settlement for node...', 'INFO');
+
+    // Simulate 1500ms network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    set(state => ({
+      activeContracts: state.activeContracts.filter(c => c.agent_id !== agentId || c.status !== 'ACTIVE'),
+      isPayrollModalOpen: false
+    }));
+
+    get().addLog('PAYROLL', 'Ledger closed and payment queued.', 'SUCCESS');
+  },
+
   setContractModalOpen: (isOpen) => set({ isContractModalOpen: isOpen }),
   setPayrollModalOpen: (isOpen) => set({ isPayrollModalOpen: isOpen }),
 
@@ -208,6 +223,27 @@ export const useAgentViewStore = create((set, get) => ({
     }
   },
 
+
+  syncPresenceState: async () => {
+    try {
+      const response = await fetch('/api/agentview/presence', {
+        headers: { 'Authorization': 'Bearer dev_passport_token_77x' }
+      });
+      if (!response.ok) return;
+      const presenceMap = await response.json();
+
+      set(state => {
+        const updatedWorkers = state.activeWorkers.map(worker => ({
+          ...worker,
+          presence_state: presenceMap[worker.agent_id] || 'OFFLINE'
+        }));
+        return { activeWorkers: updatedWorkers };
+      });
+    } catch (error) {
+      console.error("Failed to sync presence state", error);
+    }
+  },
+
   fetchEcosystemState: async () => {
     const state = get();
     if (state.authError || state.isCircuitBroken) {
@@ -219,7 +255,7 @@ export const useAgentViewStore = create((set, get) => ({
     try {
       const data = await apiCall('/state');
 
-      set({ 
+            set({
         activeWorkers: data.workers || [],
         activeTasks: data.tasks || [],
         systemLogs: data.logs || [],
@@ -227,6 +263,15 @@ export const useAgentViewStore = create((set, get) => ({
         consecutiveFailures: 0
       });
       get().addLog('SYNC', 'Ecosystem state synchronized via Worker API.', 'SUCCESS');
+      get().syncPresenceState();
+
+      if (!get().presenceInterval) {
+        const intervalId = setInterval(() => {
+          get().syncPresenceState();
+        }, 30000);
+        set({ presenceInterval: intervalId });
+      }
+
     } catch (error) {
       if (error.isAuthError) {
         set({ authError: true, isLoading: false });
