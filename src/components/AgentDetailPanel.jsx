@@ -14,6 +14,7 @@ const AgentDetailPanel = function() {
   const initiateContractGeneration = useAgentViewStore(state => state.initiateContractGeneration);
   const activeContracts = useAgentViewStore(state => state.activeContracts);
   const activateContract = useAgentViewStore(state => state.activateContract);
+  const addLog = useAgentViewStore(state => state.addLog);
 
   const [activatingId, setActivatingId] = React.useState(null);
 
@@ -186,6 +187,19 @@ const AgentDetailPanel = function() {
                     <SafeIcon icon={FiFileText} />
                     Generate Smart Contract
                   </button>
+
+                  {activeContracts && activeContracts.some(c => c.agent_id === selectedAgent.agent_id && c.status === 'ACTIVE') && (
+                    <button
+                      onClick={() => {
+                        addLog('PAYROLL', 'Initializing payroll settlement matrix...');
+                        alert('Payroll matrix offline for edge sync.');
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-axim-teal-500 text-slate-900 border border-axim-teal-400 rounded-xl text-sm font-bold hover:bg-axim-teal-400 transition-colors"
+                    >
+                      <SafeIcon icon={FiFileText} />
+                      Settle Payroll & Close Ledger
+                    </button>
+                  )}
 
                   {activeContracts && activeContracts.filter(c => c.agent_id === selectedAgent.agent_id).map(contract => (
                     <div key={contract.contract_id} className={`mt-3 flex items-center justify-between px-3 py-2 border rounded-lg ${contract.status === 'PENDING' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-axim-teal-500/10 border-axim-teal-500/30 text-axim-teal-400'}`}>

@@ -144,6 +144,10 @@ export const useAgentViewStore = create((set, get) => ({
 
   handleWsDisconnect: () => {
     const state = get();
+    if (state.wsReconnectTimeout) {
+      clearTimeout(state.wsReconnectTimeout);
+      set({ wsReconnectTimeout: null });
+    }
     if (state.isCircuitBroken) return;
 
     const attempts = state.wsReconnectAttempts;
@@ -155,14 +159,19 @@ export const useAgentViewStore = create((set, get) => ({
       const delay = Math.pow(2, attempts) * 1000;
       set({ wsReconnectAttempts: attempts + 1 });
       get().addLog('WS_RECONNECT', `WebSocket disconnected. Reconnecting in ${delay}ms...`, 'WARNING');
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         get().connectEcosystemStream();
       }, delay);
+      set({ wsReconnectTimeout: timeoutId });
     }
   },
 
   disconnectEcosystemStream: () => {
     const state = get();
+    if (state.wsReconnectTimeout) {
+      clearTimeout(state.wsReconnectTimeout);
+      set({ wsReconnectTimeout: null });
+    }
     if (state.wsInstance) {
       // Temporarily remove onclose to prevent reconnect logic from firing when intentionally pausing
       state.wsInstance.onclose = null;
@@ -442,7 +451,7 @@ export const useAgentViewStore = create((set, get) => ({
     }));
 
     // Simulate network delay
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       get().addLog('FINANCE', `Contract ${contractId} successfully activated.`, 'SUCCESS');
     }, 1000);
   }
