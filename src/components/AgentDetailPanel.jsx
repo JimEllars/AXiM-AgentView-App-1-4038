@@ -15,6 +15,7 @@ const AgentDetailPanel = function() {
   const activeContracts = useAgentViewStore(state => state.activeContracts);
   const activateContract = useAgentViewStore(state => state.activateContract);
   const addLog = useAgentViewStore(state => state.addLog);
+  const setPayrollModalOpen = useAgentViewStore(state => state.setPayrollModalOpen);
 
   const [activatingId, setActivatingId] = React.useState(null);
 
@@ -192,7 +193,7 @@ const AgentDetailPanel = function() {
                     <button
                       onClick={() => {
                         addLog('PAYROLL', 'Initializing payroll settlement matrix...');
-                        alert('Payroll matrix offline for edge sync.');
+                        setPayrollModalOpen(true);
                       }}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-axim-teal-500 text-slate-900 border border-axim-teal-400 rounded-xl text-sm font-bold hover:bg-axim-teal-400 transition-colors"
                     >
