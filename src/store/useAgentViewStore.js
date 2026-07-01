@@ -46,13 +46,16 @@ export const useAgentViewStore = create((set, get) => ({
   selectedAgent: null,
   isTaskModalOpen: false,
   isContractModalOpen: false,
+  isPayrollModalOpen: false,
   authError: false,
   consecutiveFailures: 0,
   isCircuitBroken: false,
   wsInstance: null,
   wsReconnectAttempts: 0,
+  wsPingInterval: null,
 
   setContractModalOpen: (isOpen) => set({ isContractModalOpen: isOpen }),
+  setPayrollModalOpen: (isOpen) => set({ isPayrollModalOpen: isOpen }),
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedAgent: (agent) => set({ selectedAgent: agent }),
@@ -94,6 +97,18 @@ export const useAgentViewStore = create((set, get) => ({
     const ws = new WebSocket(`wss://api.axim.us.com/v1/stream?token=${passportToken}`);
 
     ws.onopen = () => {
+      // Clear any existing zombie intervals just in case
+      if (state.wsPingInterval) {
+        clearInterval(state.wsPingInterval);
+      }
+
+      const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'PING' }));
+        }
+      }, 30000);
+
+      set({ wsPingInterval: pingInterval });
       const isReconnect = state.wsReconnectAttempts > 0;
       set({ wsReconnectAttempts: 0, wsInstance: ws });
 
@@ -136,6 +151,11 @@ export const useAgentViewStore = create((set, get) => ({
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
+      const state = get();
+      if (state.wsPingInterval) {
+        clearInterval(state.wsPingInterval);
+        set({ wsPingInterval: null });
+      }
       // Let onclose handle reconnect logic
     };
 
@@ -144,6 +164,10 @@ export const useAgentViewStore = create((set, get) => ({
 
   handleWsDisconnect: () => {
     const state = get();
+    if (state.wsPingInterval) {
+      clearInterval(state.wsPingInterval);
+      set({ wsPingInterval: null });
+    }
     if (state.wsReconnectTimeout) {
       clearTimeout(state.wsReconnectTimeout);
       set({ wsReconnectTimeout: null });
@@ -168,6 +192,10 @@ export const useAgentViewStore = create((set, get) => ({
 
   disconnectEcosystemStream: () => {
     const state = get();
+    if (state.wsPingInterval) {
+      clearInterval(state.wsPingInterval);
+      set({ wsPingInterval: null });
+    }
     if (state.wsReconnectTimeout) {
       clearTimeout(state.wsReconnectTimeout);
       set({ wsReconnectTimeout: null });

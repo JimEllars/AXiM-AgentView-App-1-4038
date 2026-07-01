@@ -18,6 +18,18 @@ export default {
       const [client, server] = Object.values(webSocketPair);
       server.accept();
 
+      server.addEventListener('message', event => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'PING') {
+            server.send(JSON.stringify({ type: 'PONG', timestamp: Date.now() }));
+          }
+        } catch (e) {
+          // Ignore parse errors on malformed ping
+        }
+      });
+
+
       return new Response(null, {
         status: 101,
         webSocket: client

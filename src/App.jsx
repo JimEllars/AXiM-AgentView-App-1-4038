@@ -10,6 +10,7 @@ import LogsFeed from './components/LogsFeed';
 import TaskInjectModal from './components/TaskInjectModal';
 import AgentDetailPanel from './components/AgentDetailPanel';
 import ContractModal from './components/ContractModal';
+import PayrollModal from './components/PayrollModal';
 import { useAgentViewStore } from './store/useAgentViewStore';
 window.useAgentViewStore = useAgentViewStore;
 import './utils/telemetry';
@@ -97,6 +98,7 @@ export default function App() {
       {/* Overlays */}
       <TaskInjectModal />
       <ContractModal />
+      <PayrollModal />
       <AgentDetailPanel />
     </BrowserRouter>
     </ErrorBoundary>
