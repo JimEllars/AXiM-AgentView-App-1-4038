@@ -9,6 +9,11 @@ const { FiX, FiDollarSign } = FiIcons;
 export default function PayrollModal() {
   const { isPayrollModalOpen, setPayrollModalOpen, selectedAgent } = useAgentViewStore();
   const modalRef = useRef(null);
+  const settlePayroll = useAgentViewStore(state => state.settlePayroll);
+
+  const billingRateCents = selectedAgent?.ecosystem_context?.associated_billing_rate_cents || 0;
+  const mockComputeTotal = `$${((billingRateCents / 100) * 0.25).toFixed(2)}`;
+
 
   const handleClose = () => {
     setPayrollModalOpen(false);
@@ -99,7 +104,7 @@ export default function PayrollModal() {
                     type="text"
                     id="final_compute"
                     readOnly
-                    value="$0.00"
+                    value={mockComputeTotal}
                     className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-400 cursor-not-allowed focus:outline-none transition-all"
                   />
                 </div>
@@ -116,8 +121,8 @@ export default function PayrollModal() {
 
                 <button
                   type="button"
-                  disabled
-                  className="px-4 py-2 text-sm font-bold bg-rose-500/50 text-void rounded-lg border border-rose-400/50 opacity-50 cursor-not-allowed transition-all"
+                  onClick={() => settlePayroll(selectedAgent.agent_id)}
+                  className="px-4 py-2 text-sm font-bold bg-rose-500 hover:bg-rose-400 text-void rounded-lg border border-rose-400 transition-all shadow-[0_0_10px_rgba(244,63,94,0.3)]"
                 >
                   Confirm Settlement
                 </button>
