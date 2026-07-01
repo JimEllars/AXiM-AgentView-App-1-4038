@@ -1,22 +1,10 @@
-# Micro-Increment 10: Lifecycle & Edge Updates
+# Changelog
 
-## Changes
+## [1.0.1] - 2026-07-01
+### Fixed
+- State Integrity: Ensure presence polling in `useAgentViewStore.js` is visibility-aware and respects the circuit breaker, thereby optimizing Cloudflare KV read usage.
+- State Integrity: Fix duplicate WebSocket instantiation in `connectEcosystemStream`.
+- State Integrity: Optimistic state update in `settlePayroll` to transition an active worker back to `IDLE`.
 
-- **Edge Resilience & React Lifecycle**:
-  - `useAgentViewStore.js`:
-    - Updated `disconnectEcosystemStream` to strictly clear reconnect timeouts and properly close active socket instances.
-  - `App.jsx`:
-    - Linked `connectEcosystemStream` initiation at app boot.
-    - Added `disconnectEcosystemStream` cleanup within the main `useEffect` lifecycle return hook.
-  - `worker.js`:
-    - Adapted `/api/v1/contracts` endpoint to handle optional `env.AXIM_EDGE_KV` saving.
-
-- **Active Compute Memory Leak Protection**:
-  - `WorkerCard.jsx`:
-    - Modified `setInterval` for the cost ticker to properly store the `intervalId`.
-    - Called `clearInterval(intervalId)` within the `useEffect` cleanup hook to prevent uncollected garbage and crash issues upon rapid navigation.
-
-- **Omni-Directional Payroll Matrix Scaffold**:
-  - `AgentDetailPanel.jsx`:
-    - Built new conditional UI state that surfaces "Settle Payroll & Close Ledger" button when `ACTIVE` contracts are engaged.
-    - Bound clicking the button to display a system telemetry log event and a default browser alert.
+### Added
+- Edge Compute: Scaffold the `/api/agentview/payroll/settle` POST endpoint in `worker.js` to begin settling records at the edge.
