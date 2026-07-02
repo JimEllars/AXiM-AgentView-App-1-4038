@@ -53,6 +53,13 @@ export default {
       try {
         const bodyText = await request.text();
         const payload = JSON.parse(bodyText);
+        if (!payload || typeof payload.agentId !== 'string' || payload.agentId.trim() === '') {
+          return new Response(JSON.stringify({ error: "Malformed payload structure." }), {
+            status: 400,
+            headers: getCorsHeaders()
+          });
+        }
+
         const { agentId, scope, compensation } = payload;
 
         // Mocking the contract creation
@@ -92,6 +99,13 @@ export default {
       try {
         const bodyText = await request.text();
         const payload = JSON.parse(bodyText);
+        if (!payload || typeof payload.agentId !== 'string' || payload.agentId.trim() === '') {
+          return new Response(JSON.stringify({ error: "Malformed payload structure." }), {
+            status: 400,
+            headers: getCorsHeaders()
+          });
+        }
+
         const { agentId } = payload;
 
         // Inject AXIM_INTERNAL_KEY internally
