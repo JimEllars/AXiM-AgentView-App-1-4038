@@ -28,3 +28,10 @@
 ### Phase 2: Payroll Time-Tracking Hook
 * **`useAgentViewStore.js`**: Added `session_start_time` set to `Date.now()` inside `operational_capability` during the `delegateWorkflow` optimistic update (transition to 'WORKING' status). Clears `session_start_time` upon reverting to 'IDLE' in `settlePayroll`.
 * **`PayrollModal.jsx`**: Replaced static mock compute logic with dynamic calculation. Calculates elapsed time in seconds from `session_start_time`, multiplies by the billing rate (per hour), and correctly formats the output as a dollar amount. Defaults to $0.00 if `session_start_time` is missing.
+
+## [1.4.15] - 2024-02-XX
+### CPU and Data Integrity Improvements
+- **WorkerCard.jsx**: Implemented \`IntersectionObserver\` to pause compute tickers for out-of-view workers, saving client CPU cycles.
+- **TaskCard.jsx & useAgentViewStore.js**: Added failsafe to prevent deletion of in-progress tasks. If an assigned task is deleted (via remote override or edge case), the assigned agent is optimistically reset to \`IDLE\` to prevent stranding.
+- **worker.js**: Hardened edge routing with strict enterprise security headers (nosniff, X-Frame-Options DENY, HSTS).
+- **LogsFeed.jsx**: Added "System Ledger Archival" via a one-click local JSON export to preserve volatile session data before the 50-item cap rotates it out.

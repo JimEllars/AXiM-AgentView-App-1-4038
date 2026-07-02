@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import Badge from './ui/Badge';
 import { motion } from 'framer-motion';
@@ -11,15 +11,31 @@ const WorkerCard = function({ worker }) {
   const isMalformed = !worker || !worker.identity_profile || !worker.operational_capability || !worker.ecosystem_context;
   const setSelectedAgent = useAgentViewStore(state => state.setSelectedAgent);
 
-    const [activeCostCents, setActiveCostCents] = useState(0);
+  const [activeCostCents, setActiveCostCents] = useState(0);
+  const [isIntersecting, setIsIntersecting] = useState(true);
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+    });
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     let intervalId;
     if (worker?.operational_capability?.current_status === 'WORKING') {
-      const ratePerSecond = (worker?.ecosystem_context?.associated_billing_rate_cents || 0) / 3600;
-      intervalId = setInterval(() => {
-        setActiveCostCents(prev => prev + ratePerSecond);
-      }, 1000);
+      if (isIntersecting) {
+        const ratePerSecond = (worker?.ecosystem_context?.associated_billing_rate_cents || 0) / 3600;
+        intervalId = setInterval(() => {
+          setActiveCostCents(prev => prev + ratePerSecond);
+        }, 1000);
+      }
     } else {
       setActiveCostCents(0);
     }
@@ -28,7 +44,7 @@ const WorkerCard = function({ worker }) {
         clearInterval(intervalId);
       }
     };
-  }, [worker?.operational_capability?.current_status, worker?.ecosystem_context?.associated_billing_rate_cents]);
+  }, [worker?.operational_capability?.current_status, worker?.ecosystem_context?.associated_billing_rate_cents, isIntersecting]);
 
   if (isMalformed) {
     return (
@@ -58,10 +74,6 @@ const WorkerCard = function({ worker }) {
 
   const { identity_profile, operational_capability, ecosystem_context } = worker;
 
-
-
-
-  
   const classificationType = identity_profile?.classification_type || 'UNKNOWN';
   const isAI = classificationType === 'AI_AGENT';
   const isHuman = classificationType === 'HUMAN_1099' || classificationType === 'HUMAN';
@@ -74,6 +86,7 @@ const WorkerCard = function({ worker }) {
 
   return (
     <motion.div 
+      ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}

@@ -459,6 +459,22 @@ export const useAgentViewStore = create((set, get) => ({
       return;
     }
 
+    const taskToRemove = get().activeTasks.find(t => t.task_id === taskId);
+    if (taskToRemove && taskToRemove.assigned_agent) {
+      const previousWorkers = get().activeWorkers;
+      const workerToUpdate = previousWorkers.find(w => w.agent_id === taskToRemove.assigned_agent);
+      if (workerToUpdate) {
+        const updatedWorker = {
+          ...workerToUpdate,
+          operational_capability: {
+            ...workerToUpdate.operational_capability,
+            current_status: 'IDLE'
+          }
+        };
+        set({ activeWorkers: previousWorkers.map(w => w.agent_id === taskToRemove.assigned_agent ? updatedWorker : w) });
+      }
+    }
+
     get().addLog('CLEANUP', `Removing task vector ${taskId}...`);
     try {
       await apiCall(`/tasks/${taskId}`, 'DELETE');
@@ -467,7 +483,6 @@ export const useAgentViewStore = create((set, get) => ({
       window.dispatchAgentViewAnomaly('TASK_REMOVAL_FAILURE', error);
     }
   },
-
   approveIntake: async (agentId) => {
     const previousWorkers = get().activeWorkers;
     const workerToUpdate = previousWorkers.find(w => w.agent_id === agentId);

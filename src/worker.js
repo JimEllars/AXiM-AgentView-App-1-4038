@@ -194,7 +194,10 @@ function getCorsHeaders() {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
   };
 }
 
@@ -202,6 +205,9 @@ function setCorsHeaders(headers) {
   headers.set("Access-Control-Allow-Origin", "*");
   headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 }
 
 function handleCorsPreflight() {
