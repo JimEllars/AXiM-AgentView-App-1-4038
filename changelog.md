@@ -18,3 +18,13 @@
 
 **Phase 2: Financial Data Integrity**
 - Added a read-only Entity Verification block to ContractModal.jsx. It displays selectedAgent data (display name, ID, and billing rate in dollars) securely. Included an explicit fallback UI error state preventing action if the required entity context is null.
+
+## Micro-Increment 14: Edge Validation & Session Time-Tracking
+
+### Phase 1: Edge Security & Payload Validation
+* **`worker.js`**: Implemented strict payload validation on `/api/agentview/payroll/settle` and `/api/v1/contracts` endpoints. Verify that `agentId` exists, is a string, and is not empty. Returns a 400 Bad Request if validation fails, halting execution before hitting the KV store or Core API.
+* **`useAgentViewStore.js`**: Enhanced error handling to intercept 400 Bad Request status codes. Dispatches a `SECURITY_ANOMALY` telemetry event and logs the anomaly as CRITICAL when the edge proxy rejects a payload.
+
+### Phase 2: Payroll Time-Tracking Hook
+* **`useAgentViewStore.js`**: Added `session_start_time` set to `Date.now()` inside `operational_capability` during the `delegateWorkflow` optimistic update (transition to 'WORKING' status). Clears `session_start_time` upon reverting to 'IDLE' in `settlePayroll`.
+* **`PayrollModal.jsx`**: Replaced static mock compute logic with dynamic calculation. Calculates elapsed time in seconds from `session_start_time`, multiplies by the billing rate (per hour), and correctly formats the output as a dollar amount. Defaults to $0.00 if `session_start_time` is missing.

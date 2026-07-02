@@ -26,11 +26,24 @@ async function apiCall(endpoint, method = 'GET', body = null, token = null) {
 
   if (!response.ok) {
     const error = new Error(`API error: ${response.status} ${response.statusText}`);
+    if (response.status === 400) {
+      error.isBadRequest = true;
+    }
     error.status = response.status;
     if (response.status === 401 || response.status === 403) {
       error.isAuthError = true;
     }
+    if (response.status === 400) {
+      window.dispatchAgentViewAnomaly('SECURITY_ANOMALY', error);
+      // We will let the catch block log it or we can log it here if we use useAgentViewStore.getState().addLog
+      useAgentViewStore.getState().addLog('CRITICAL', 'Edge validation rejected payload. Potential data corruption or tampering detected.', 'CRITICAL');
+    }
     throw error;
+  }
+
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return null;
   }
 
   return response.json();
@@ -71,7 +84,8 @@ export const useAgentViewStore = create((set, get) => ({
         ...workerToUpdate,
         operational_capability: {
           ...workerToUpdate.operational_capability,
-          current_status: 'IDLE'
+          current_status: 'IDLE',
+          session_start_time: null
         }
       };
       updatedWorkers = previousWorkers.map(w => w.agent_id === agentId ? updatedWorker : w);
@@ -361,7 +375,8 @@ export const useAgentViewStore = create((set, get) => ({
         ...workerToUpdate,
         operational_capability: {
           ...workerToUpdate.operational_capability,
-          current_status: 'WORKING'
+          current_status: 'WORKING',
+          session_start_time: Date.now()
         }
       };
       set({ activeWorkers: previousWorkers.map(w => w.agent_id === agentId ? updatedWorker : w) });
@@ -523,7 +538,14 @@ export const useAgentViewStore = create((set, get) => ({
         body: JSON.stringify({ agentId, scope, compensation })
       });
 
-      if (!response.ok) throw new Error('Contract generation failed');
+      if (!response.ok) {
+        const error = new Error('Contract generation failed');
+        if (response.status === 400) {
+          window.dispatchAgentViewAnomaly('SECURITY_ANOMALY', error);
+          get().addLog('CRITICAL', 'Edge validation rejected payload. Potential data corruption or tampering detected.', 'CRITICAL');
+        }
+        throw error;
+      }
 
       const contractData = await response.json();
 

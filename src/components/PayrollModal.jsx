@@ -12,7 +12,21 @@ export default function PayrollModal() {
   const settlePayroll = useAgentViewStore(state => state.settlePayroll);
 
   const billingRateCents = selectedAgent?.ecosystem_context?.associated_billing_rate_cents || 0;
-  const mockComputeTotal = `$${((billingRateCents / 100) * 0.25).toFixed(2)}`;
+  // Calculate dynamic invoice total
+  let computeTotal = "$0.00";
+  if (selectedAgent?.operational_capability?.session_start_time) {
+    const sessionStartTime = selectedAgent.operational_capability.session_start_time;
+    const elapsedSeconds = (Date.now() - sessionStartTime) / 1000;
+
+    // assuming associated_billing_rate_cents is per hour:
+    // (rate_cents / 100) = dollars per hour
+    // dollars per hour / 3600 = dollars per second
+    const dollarsPerSecond = (billingRateCents / 100) / 3600;
+
+    const calculatedTotal = elapsedSeconds * dollarsPerSecond;
+    computeTotal = `${calculatedTotal.toFixed(2)}`;
+  }
+  const mockComputeTotal = computeTotal;
 
 
   const handleClose = () => {
