@@ -53,8 +53,13 @@ const TaskCard = function({ task, workers }) {
             {task.priority}
           </Badge>
           <button 
-            onClick={() => removeTask(task.task_id)}
-            className="p-1.5 text-slate-600 hover:text-rose-400 transition-colors"
+            onClick={() => {
+              if (!isInProgress) {
+                removeTask(task.task_id);
+              }
+            }}
+            disabled={isInProgress}
+            className={`p-1.5 text-slate-600 hover:text-rose-400 transition-colors ${isInProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <SafeIcon icon={FiTrash2} className="text-sm" />
           </button>
