@@ -6,7 +6,7 @@ import TaskCard from './TaskCard';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity, FiUserPlus } = FiIcons;
+const { FiUsers, FiLayers, FiClock, FiCpu, FiActivity, FiUserPlus, FiList } = FiIcons;
 
 export default function Dashboard() {
   useEffect(() => {
@@ -222,7 +222,10 @@ export default function Dashboard() {
                {verifiedWorkers.length > 0 ? (
                  verifiedWorkers.map(w => <WorkerCard key={w.agent_id} worker={w} />)
                ) : (
-                 <div className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No resources match query.</div>
+                 <div className="flex flex-col items-center justify-center p-8 border border-axim-teal-500/20 bg-axim-teal-500/5 rounded-xl text-center">
+                   <SafeIcon icon={FiCpu} className="text-slate-500 text-3xl mb-3" />
+                   <p className="text-slate-400 text-sm">No active nodes match current ecosystem parameters.</p>
+                 </div>
                )}
              </div>
            </div>
@@ -239,7 +242,10 @@ export default function Dashboard() {
                  {filteredTasks.length > 0 ? (
                    filteredTasks.map(t => <TaskCard key={t.task_id} task={t} workers={activeWorkers} />)
                  ) : (
-                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-slate-500 text-sm italic py-4 text-center border border-dashed border-slate-800 rounded-xl">No tasks match query.</motion.div>
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center p-8 border border-axim-teal-500/20 bg-axim-teal-500/5 rounded-xl text-center">
+                     <SafeIcon icon={FiList} className="text-slate-500 text-3xl mb-3" />
+                     <p className="text-slate-400 text-sm">No pending vectors in current queue.</p>
+                   </motion.div>
                  )}
                </AnimatePresence>
              </div>

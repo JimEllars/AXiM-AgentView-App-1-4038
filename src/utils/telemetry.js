@@ -46,6 +46,24 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
     }
   };
 
+  // Route High-Severity Logs to edge telemetry route
+  if (severity === "CRITICAL" || anomalyType === "SECURITY_ANOMALY") {
+    fetch('/api/v1/telemetry', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        level: severity,
+        type: anomalyType,
+        message: telemetryEnvelope.event_payload.error_message,
+        timestamp: telemetryEnvelope.telemetry_envelope.timestamp
+      })
+    }).catch(err => {
+      // Background request, intentionally unhandled
+    });
+  }
+
   // Fire beacon directly to central network routing layers
   if (navigator.sendBeacon) {
     // Suppressed real network call in sandbox to avoid CORS errors in console
