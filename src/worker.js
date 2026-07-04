@@ -48,6 +48,26 @@ export default {
     // Securely inject the internal AXiM key
     const internalAximKey = env.AXIM_INTERNAL_KEY || 'development_mock_key';
 
+    // Route /api/v1/telemetry for edge logging
+    if (request.method === "POST" && url.pathname === "/api/v1/telemetry") {
+      try {
+        const bodyText = await request.text();
+        const payload = JSON.parse(bodyText);
+        if (payload.level === "CRITICAL" || payload.level === "SECURITY_ANOMALY") {
+          console.error("[Edge Telemetry]", JSON.stringify(payload));
+        }
+        return new Response(JSON.stringify({ status: "ok" }), {
+          status: 200,
+          headers: getCorsHeaders()
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Invalid telemetry payload." }), {
+          status: 400,
+          headers: getCorsHeaders()
+        });
+      }
+    }
+
     // Route /api/v1/contracts for smart contract generation
     if (request.method === "POST" && url.pathname === "/api/v1/contracts") {
       try {
@@ -111,7 +131,7 @@ export default {
         // Inject AXIM_INTERNAL_KEY internally
         const injectedKey = internalAximKey;
 
-        return new Response(JSON.stringify({ success: true, message: "Ledger recorded at edge." }), {
+        return new Response(JSON.stringify({ success: true, payment_intent_id: "pi_mock_12345", status: "requires_capture" }), {
           status: 200,
           headers: getCorsHeaders()
         });
