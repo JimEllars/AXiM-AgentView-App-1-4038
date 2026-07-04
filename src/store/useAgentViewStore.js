@@ -93,13 +93,13 @@ export const useAgentViewStore = create((set, get) => ({
 
     set({
       activeContracts: updatedContracts,
-      activeWorkers: updatedWorkers,
-      isPayrollModalOpen: false
+      activeWorkers: updatedWorkers
     });
 
     try {
-      await apiCall('/payroll/settle', 'POST', { agentId });
-      get().addLog('PAYROLL', 'Ledger closed and payment queued.', 'SUCCESS');
+      const response = await apiCall('/payroll/settle', 'POST', { agentId });
+      get().addLog('PAYROLL', `Ledger closed successfully. Intent ID: ${response.payment_intent_id}`, 'INFO');
+      return response.payment_intent_id;
     } catch (error) {
       set({ activeContracts: previousContracts, activeWorkers: previousWorkers });
       window.dispatchAgentViewAnomaly('PAYROLL_SETTLEMENT_FAILURE', new Error("Network rejection: Payroll settlement rolled back."));

@@ -4,8 +4,6 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Enforce global environment CORS contracts
-    if (request.method === "OPTIONS") return handleCorsPreflight();
 
     // Handle WebSocket Upgrades
     if (request.headers.get("Upgrade") === "websocket") {
@@ -35,6 +33,9 @@ export default {
         webSocket: client
       });
     }
+
+    // Enforce global environment CORS contracts
+    if (request.method === "OPTIONS") return handleCorsPreflight();
 
     // Verify presence of internal master passport credentials
     const passportToken = request.headers.get("Authorization");
