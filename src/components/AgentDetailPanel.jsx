@@ -18,14 +18,10 @@ const AgentDetailPanel = function() {
   const setPayrollModalOpen = useAgentViewStore(state => state.setPayrollModalOpen);
   const currentUserRole = useAgentViewStore(state => state.currentUserRole);
 
-  const [activatingId, setActivatingId] = React.useState(null);
+  const lockedContracts = useAgentViewStore(state => state.lockedContracts);
 
   const handleActivate = async (contractId) => {
-    setActivatingId(contractId);
     activateContract(contractId);
-    setTimeout(() => {
-      setActivatingId(null);
-    }, 1000);
   };
 
   const handleDecommission = () => {
@@ -225,13 +221,13 @@ const AgentDetailPanel = function() {
                         {contract.status === 'PENDING' && (
                           <button
                             onClick={() => handleActivate(contract.contract_id)}
-                            disabled={activatingId === contract.contract_id}
+                            disabled={lockedContracts.includes(contract.contract_id)}
                             className="text-[10px] uppercase font-bold px-2 py-1 bg-axim-teal-500/10 text-axim-teal-400 border border-axim-teal-500/20 rounded hover:bg-axim-teal-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                           >
-                            {activatingId === contract.contract_id ? (
+                            {lockedContracts.includes(contract.contract_id) ? (
                               <>
                                 <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-axim-teal-400"></span>
-                                Activating...
+                                Locking...
                               </>
                             ) : (
                               'Activate'
