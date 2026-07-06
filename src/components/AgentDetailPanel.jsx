@@ -16,6 +16,7 @@ const AgentDetailPanel = function() {
   const activateContract = useAgentViewStore(state => state.activateContract);
   const addLog = useAgentViewStore(state => state.addLog);
   const setPayrollModalOpen = useAgentViewStore(state => state.setPayrollModalOpen);
+  const currentUserRole = useAgentViewStore(state => state.currentUserRole);
 
   const [activatingId, setActivatingId] = React.useState(null);
 
@@ -184,7 +185,9 @@ const AgentDetailPanel = function() {
                     <div className="text-sm text-slate-300 font-mono">${formattedRate}</div>
                   </div>
                                     <button
-                    onClick={initiateContractGeneration} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-axim-teal-500/10 text-axim-teal-400 border border-axim-teal-500/20 rounded-xl text-sm font-bold hover:bg-axim-teal-500/20 transition-colors"
+                    onClick={initiateContractGeneration}
+                    disabled={currentUserRole !== 'ADMIN'}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 bg-axim-teal-500/10 text-axim-teal-400 border border-axim-teal-500/20 rounded-xl text-sm font-bold hover:bg-axim-teal-500/20 transition-colors ${currentUserRole !== 'ADMIN' ? 'disabled:opacity-50 disabled:cursor-not-allowed opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <SafeIcon icon={FiFileText} />
                     Generate Smart Contract
@@ -196,15 +199,24 @@ const AgentDetailPanel = function() {
                         addLog('PAYROLL', 'Initializing payroll settlement matrix...');
                         setPayrollModalOpen(true);
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-axim-teal-500 text-slate-900 border border-axim-teal-400 rounded-xl text-sm font-bold hover:bg-axim-teal-400 transition-colors"
+                      disabled={currentUserRole !== 'ADMIN'}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-axim-teal-500 text-slate-900 border border-axim-teal-400 rounded-xl text-sm font-bold hover:bg-axim-teal-400 transition-colors ${currentUserRole !== 'ADMIN' ? 'disabled:opacity-50 disabled:cursor-not-allowed opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <SafeIcon icon={FiFileText} />
                       Settle Payroll & Close Ledger
                     </button>
                   )}
 
+                  <AnimatePresence>
                   {activeContracts && activeContracts.filter(c => c.agent_id === selectedAgent.agent_id).map(contract => (
-                    <div key={contract.contract_id} className={`mt-3 flex items-center justify-between px-3 py-2 border rounded-lg ${contract.status === 'PENDING' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-axim-teal-500/10 border-axim-teal-500/30 text-axim-teal-400'}`}>
+                    <motion.div
+                      key={contract.contract_id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                      className={`mt-3 flex items-center justify-between px-3 py-2 border rounded-lg ${contract.status === 'PENDING' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-axim-teal-500/10 border-axim-teal-500/30 text-axim-teal-400'}`}
+                    >
                       <div className="flex items-center gap-2">
                         <SafeIcon icon={FiFileText} className="text-sm" />
                         <span className="text-xs font-mono">{contract.contract_id.substring(0, 8)}...</span>
@@ -228,8 +240,9 @@ const AgentDetailPanel = function() {
                         )}
                         <span className="text-xs font-bold">${contract.compensation_limit} Limit</span>
                       </div>
-                    </div>
-))}
+                    </motion.div>
+                  ))}
+                  </AnimatePresence>
                 </div>
               </div>
 
