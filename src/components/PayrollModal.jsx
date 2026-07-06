@@ -11,6 +11,20 @@ export default function PayrollModal() {
   const modalRef = useRef(null);
   const settlePayroll = useAgentViewStore(state => state.settlePayroll);
   const [transactionReceipt, setTransactionReceipt] = React.useState(null);
+  const [stripeElementsLoaded, setStripeElementsLoaded] = React.useState(false);
+
+  useEffect(() => {
+    let timeout;
+    if (isPayrollModalOpen && !transactionReceipt) {
+      timeout = setTimeout(() => {
+        setStripeElementsLoaded(true);
+      }, 800);
+    }
+    return () => {
+      clearTimeout(timeout);
+      setStripeElementsLoaded(false);
+    };
+  }, [isPayrollModalOpen, transactionReceipt]);
 
   useEffect(() => {
     if (!isPayrollModalOpen) {
@@ -154,8 +168,17 @@ export default function PayrollModal() {
 
 
               <div className="bg-slate-900 border border-slate-800 rounded-md p-3 mb-4 flex items-center justify-center gap-2">
-                <SafeIcon icon={FiCreditCard} className="text-slate-500" />
-                <span className="text-slate-500 text-sm">Secure Payment Gateway Offline</span>
+                {!stripeElementsLoaded ? (
+                  <div className="flex items-center gap-2 text-axim-teal-400">
+                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-axim-teal-400"></span>
+                    <span className="text-sm">Loading Gateway...</span>
+                  </div>
+                ) : (
+                  <>
+                    <SafeIcon icon={FiCreditCard} className="text-axim-teal-400" />
+                    <span className="text-axim-teal-400 text-sm font-medium">Secure Payment Gateway Ready</span>
+                  </>
+                )}
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-800/50 mt-4">

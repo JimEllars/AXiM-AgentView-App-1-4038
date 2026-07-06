@@ -13,22 +13,29 @@ const WorkerCard = function({ worker }) {
 
     const [activeCostCents, setActiveCostCents] = useState(0);
 
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const maxExecutionTime = worker?.ecosystem_context?.max_execution_time_seconds || 3600;
+
   useEffect(() => {
     let intervalId;
     if (worker?.operational_capability?.current_status === 'WORKING') {
       const ratePerSecond = (worker?.ecosystem_context?.associated_billing_rate_cents || 0) / 3600;
+      const sessionStartTime = worker?.operational_capability?.session_start_time || Date.now();
+
       intervalId = setInterval(() => {
         setActiveCostCents(prev => prev + ratePerSecond);
+        setElapsedSeconds(Math.floor((Date.now() - sessionStartTime) / 1000));
       }, 1000);
     } else {
       setActiveCostCents(0);
+      setElapsedSeconds(0);
     }
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [worker?.operational_capability?.current_status, worker?.ecosystem_context?.associated_billing_rate_cents]);
+  }, [worker?.operational_capability?.current_status, worker?.ecosystem_context?.associated_billing_rate_cents, worker?.operational_capability?.session_start_time]);
 
   if (isMalformed) {
     return (
@@ -106,9 +113,22 @@ const WorkerCard = function({ worker }) {
           ))}
         </div>
                 {operational_capability?.current_status === 'WORKING' && (
-          <div className="mt-2 text-axim-teal-400 font-mono text-[10px] animate-pulse bg-axim-teal-500/10 p-1.5 rounded w-fit">
-            [ACTIVE COMPUTE: ${(activeCostCents / 100).toFixed(2)}]
-          </div>
+          (() => {
+            let textColorClass = "text-axim-teal-400";
+            let limitWarning = "";
+            if (elapsedSeconds > maxExecutionTime) {
+              textColorClass = "text-rose-500";
+              limitWarning = " [LIMIT EXCEEDED]";
+            } else if (elapsedSeconds > maxExecutionTime * 0.8) {
+              textColorClass = "text-amber-400";
+            }
+
+            return (
+              <div className={`mt-2 ${textColorClass} font-mono text-[10px] animate-pulse bg-axim-teal-500/10 p-1.5 rounded w-fit`}>
+                [ACTIVE COMPUTE: ${(activeCostCents / 100).toFixed(2)}]{limitWarning}
+              </div>
+            );
+          })()
         )}
       </div>
       

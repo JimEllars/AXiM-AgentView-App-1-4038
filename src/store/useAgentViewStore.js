@@ -54,6 +54,7 @@ export const useAgentViewStore = create((set, get) => ({
   activeWorkers: [],
   activeTasks: [],
   activeContracts: [],
+  lockedContracts: [],
   systemLogs: [],
   isLoading: false,
   searchQuery: '',
@@ -586,15 +587,19 @@ export const useAgentViewStore = create((set, get) => ({
   activateContract: (contractId) => {
     get().addLog('FINANCE', `Initiating contract activation for ${contractId}...`, 'INFO');
 
-    // Optimistic UI update
+    // Optimistic UI update and add to lockedContracts
     set(state => ({
       activeContracts: state.activeContracts.map(c =>
         c.contract_id === contractId ? { ...c, status: 'ACTIVE' } : c
-      )
+      ),
+      lockedContracts: [...state.lockedContracts, contractId]
     }));
 
     // Simulate network delay
     const timeoutId = setTimeout(() => {
+      set(state => ({
+        lockedContracts: state.lockedContracts.filter(id => id !== contractId)
+      }));
       get().addLog('FINANCE', `Contract ${contractId} successfully activated.`, 'SUCCESS');
     }, 1000);
   }
