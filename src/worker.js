@@ -71,6 +71,12 @@ export default {
 
     // Route /api/v1/contracts for smart contract generation
     if (request.method === "POST" && url.pathname === "/api/v1/contracts") {
+      if (!verifyAdminRole(passportToken)) {
+        return new Response(JSON.stringify({ error: "Insufficient ecosystem clearance for financial mutation." }), {
+          status: 403,
+          headers: getCorsHeaders()
+        });
+      }
       try {
         const bodyText = await request.text();
         const payload = JSON.parse(bodyText);
@@ -117,6 +123,12 @@ export default {
 
     // Route /api/agentview/payroll/settle for edge settlement
     if (request.method === "POST" && url.pathname === "/api/agentview/payroll/settle") {
+      if (!verifyAdminRole(passportToken)) {
+        return new Response(JSON.stringify({ error: "Insufficient ecosystem clearance for financial mutation." }), {
+          status: 403,
+          headers: getCorsHeaders()
+        });
+      }
       try {
         const bodyText = await request.text();
         const payload = JSON.parse(bodyText);
@@ -141,6 +153,24 @@ export default {
           status: 400,
           headers: getCorsHeaders()
         });
+      }
+    }
+
+
+    // Route /api/v1/presence (POST) for KV write paths
+    if (request.method === "POST" && url.pathname === "/api/v1/presence") {
+      try {
+        const bodyText = await request.text();
+        const payload = JSON.parse(bodyText);
+        if (!payload.agentId || !payload.status) {
+          return new Response(JSON.stringify({ error: "Missing agentId or status" }), { status: 400, headers: getCorsHeaders() });
+        }
+        if (env.KV_BINDING) {
+          await env.KV_BINDING.put(payload.agentId, payload.status, { expirationTtl: 300 });
+        }
+        return new Response(JSON.stringify({ status: "ok" }), { status: 200, headers: getCorsHeaders() });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Invalid payload" }), { status: 400, headers: getCorsHeaders() });
       }
     }
 
@@ -230,4 +260,24 @@ function handleCorsPreflight() {
     status: 204,
     headers: getCorsHeaders()
   });
+}
+
+
+function verifyAdminRole(token) {
+  try {
+    const parts = token.replace('Bearer ', '').split('.');
+    if (parts.length !== 3) return false;
+
+    // We decode the payload (part 1)
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const payload = JSON.parse(jsonPayload);
+    return payload.role === 'ADMIN';
+  } catch (e) {
+    return false;
+  }
 }

@@ -4,7 +4,7 @@ import { useAgentViewStore } from '../store/useAgentViewStore';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiX, FiDollarSign } = FiIcons;
+const { FiX, FiDollarSign, FiCreditCard } = FiIcons;
 
 export default function PayrollModal() {
   const { isPayrollModalOpen, setPayrollModalOpen, selectedAgent } = useAgentViewStore();
@@ -150,6 +150,12 @@ export default function PayrollModal() {
                     className="w-full bg-void border border-slate-700 rounded-lg p-3 text-slate-400 cursor-not-allowed focus:outline-none transition-all"
                   />
                 </div>
+              </div>
+
+
+              <div className="bg-slate-900 border border-slate-800 rounded-md p-3 mb-4 flex items-center justify-center gap-2">
+                <SafeIcon icon={FiCreditCard} className="text-slate-500" />
+                <span className="text-slate-500 text-sm">Secure Payment Gateway Offline</span>
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-800/50 mt-4">

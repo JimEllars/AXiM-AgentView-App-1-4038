@@ -167,6 +167,20 @@ export const useAgentViewStore = create((set, get) => ({
       }, 30000);
 
       set({ wsPingInterval: pingInterval });
+
+      // Client Heartbeat Beacon
+      if (get().presenceInterval) {
+        clearInterval(get().presenceInterval);
+      }
+      const pInterval = setInterval(() => {
+        fetch('/api/v1/presence', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId: 'user-123', status: 'ONLINE' })
+        }).catch(err => console.error('Heartbeat beacon failed', err));
+      }, 3 * 60 * 1000); // 3 minutes
+      set({ presenceInterval: pInterval });
+
       const isReconnect = state.wsReconnectAttempts > 0;
       set({ wsReconnectAttempts: 0, wsInstance: ws });
 
