@@ -50,6 +50,7 @@ async function apiCall(endpoint, method = 'GET', body = null, token = null) {
 }
 
 export const useAgentViewStore = create((set, get) => ({
+  currentUserRole: 'MANAGER',
   activeWorkers: [],
   activeTasks: [],
   activeContracts: [],
@@ -273,7 +274,7 @@ export const useAgentViewStore = create((set, get) => ({
   syncPresenceState: async () => {
     if (get().isCircuitBroken || document.hidden) return;
     try {
-      const response = await fetch('/api/agentview/presence', {
+      const response = await fetch('/api/v1/presence', {
         headers: { 'Authorization': 'Bearer dev_passport_token_77x' }
       });
       if (!response.ok) return;
@@ -282,7 +283,7 @@ export const useAgentViewStore = create((set, get) => ({
       set(state => {
         const updatedWorkers = state.activeWorkers.map(worker => ({
           ...worker,
-          presence_state: presenceMap[worker.agent_id] || 'OFFLINE'
+          presence_status: presenceMap[worker.agent_id] || 'OFFLINE'
         }));
         return { activeWorkers: updatedWorkers };
       });

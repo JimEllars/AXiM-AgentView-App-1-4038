@@ -144,22 +144,22 @@ export default {
       }
     }
 
-    // Route /api/agentview/presence to check agent presence state
-    if (request.method === "GET" && url.pathname === "/api/agentview/presence") {
+    // Route /api/v1/presence to check agent presence state
+    if (request.method === "GET" && url.pathname === "/api/v1/presence") {
       let presenceMap = {};
       if (env.KV_BINDING) {
         try {
           const listResult = await env.KV_BINDING.list();
-          for (const key of listResult.keys) {
-            // KV returns basic metadata in list, we could assume anything in KV is ONLINE or read the value.
-            // As per instruction: return a JSON map of agent IDs to their current presence status ("ONLINE", "BUSY", or "OFFLINE").
-            // Let's read the value to see if it says BUSY or ONLINE, default ONLINE.
-            // A more optimized way if the status is stored in metadata would be list({}).
-            const value = await env.KV_BINDING.get(key.name);
-            presenceMap[key.name] = value || "ONLINE";
-          }
+          // Optimized concurrent KV gets
+          const keys = listResult.keys.map(k => k.name);
+          const values = await Promise.all(keys.map(key => env.KV_BINDING.get(key)));
+
+          keys.forEach((key, index) => {
+            presenceMap[key] = values[index] || "ONLINE";
+          });
         } catch (error) {
           console.error("KV presence listing failed:", error);
+          presenceMap = {}; // Safe empty object on error
         }
       }
       return new Response(JSON.stringify(presenceMap), {
