@@ -48,17 +48,24 @@ window.dispatchAgentViewAnomaly = (anomalyType, errorDetails) => {
 
   // Route High-Severity Logs to edge telemetry route
   if (severity === "CRITICAL" || anomalyType === "SECURITY_ANOMALY") {
+    let payload = {
+      level: severity,
+      type: anomalyType,
+      message: telemetryEnvelope.event_payload.error_message,
+      timestamp: telemetryEnvelope.telemetry_envelope.timestamp
+    };
+    let bodyStr = JSON.stringify(payload);
+    if (new Blob([bodyStr]).size > 8192) {
+      console.warn('[AXiM Onyx Swarm] Telemetry payload exceeds 8KB limit. Truncating message.');
+      payload.message = payload.message.substring(0, 7500) + ' [TRUNCATED]';
+      bodyStr = JSON.stringify(payload);
+    }
     fetch('/api/v1/telemetry', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        level: severity,
-        type: anomalyType,
-        message: telemetryEnvelope.event_payload.error_message,
-        timestamp: telemetryEnvelope.telemetry_envelope.timestamp
-      })
+      body: bodyStr
     }).catch(err => {
       // Background request, intentionally unhandled
     });

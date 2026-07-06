@@ -10,6 +10,23 @@ export default function PayrollModal() {
   const { isPayrollModalOpen, setPayrollModalOpen, selectedAgent } = useAgentViewStore();
   const modalRef = useRef(null);
   const settlePayroll = useAgentViewStore(state => state.settlePayroll);
+  const [transactionReceipt, setTransactionReceipt] = React.useState(null);
+
+  useEffect(() => {
+    if (!isPayrollModalOpen) {
+      setTransactionReceipt(null);
+    }
+  }, [isPayrollModalOpen]);
+
+  const handleSettle = async () => {
+    const intentId = await settlePayroll(selectedAgent.agent_id);
+    if (intentId) {
+      setTransactionReceipt(intentId);
+      setTimeout(() => {
+        setPayrollModalOpen(false);
+      }, 3000);
+    }
+  };
 
   const billingRateCents = selectedAgent?.ecosystem_context?.associated_billing_rate_cents || 0;
   // Calculate dynamic invoice total
@@ -89,7 +106,16 @@ export default function PayrollModal() {
             </div>
 
             <div className="p-6">
-              {!selectedAgent ? (
+              {transactionReceipt ? (
+                <div className="flex flex-col items-center justify-center p-8 border-2 border-axim-teal-400 rounded-xl bg-axim-teal-900/20">
+                  <SafeIcon icon={FiDollarSign} className="text-4xl text-axim-teal-400 mb-4" />
+                  <h3 className="text-xl font-bold text-slate-100 mb-2">Transaction Complete</h3>
+                  <div className="text-sm text-slate-400 mb-4">Ledger closed successfully.</div>
+                  <div className="font-mono text-axim-teal-300 bg-slate-950 px-4 py-2 rounded-lg border border-axim-teal-400/50">
+                    {transactionReceipt}
+                  </div>
+                </div>
+              ) : !selectedAgent ? (
                 <div className="text-rose-400 text-sm font-mono bg-rose-500/10 p-4 rounded-lg border border-rose-500/20">
                   CRITICAL: No agent context found. Cannot settle ledger without an explicit entity lock.
                 </div>
@@ -109,7 +135,9 @@ export default function PayrollModal() {
                 </div>
               )}
 
-              <div className="flex flex-col gap-4 mt-4 mb-4">
+              {!transactionReceipt && (
+                <>
+                  <div className="flex flex-col gap-4 mt-4 mb-4">
                 <div className="flex flex-col gap-1">
                   <label htmlFor="final_compute" className="text-sm font-medium text-slate-300">
                     Final Compute / Invoice Total
@@ -135,12 +163,14 @@ export default function PayrollModal() {
 
                 <button
                   type="button"
-                  onClick={() => settlePayroll(selectedAgent.agent_id)}
+                  onClick={handleSettle}
                   className="px-4 py-2 text-sm font-bold bg-rose-500 hover:bg-rose-400 text-void rounded-lg border border-rose-400 transition-all shadow-[0_0_10px_rgba(244,63,94,0.3)]"
                 >
                   Confirm Settlement
                 </button>
               </div>
+                </>
+              )}
             </div>
           </motion.div>
         </>
