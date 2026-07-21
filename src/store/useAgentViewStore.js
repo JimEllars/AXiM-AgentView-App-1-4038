@@ -120,6 +120,10 @@ export const useAgentViewStore = create((set, get) => ({
     get().connectEcosystemStream();
   },
 
+  logSlaBreach: (agentId, excessTime) => {
+    get().addLog('SLA_BREACH', `SLA breached for agent ${agentId} by ${excessTime}s.`, 'WARNING');
+  },
+
   addLog: (type, message, severity = 'INFO') => {
     const newLog = {
       id: Date.now().toString(),
@@ -595,12 +599,15 @@ export const useAgentViewStore = create((set, get) => ({
       lockedContracts: [...state.lockedContracts, contractId]
     }));
 
-    // Simulate network delay
+    // Stuck Lock TTL Failsafe
     const timeoutId = setTimeout(() => {
-      set(state => ({
-        lockedContracts: state.lockedContracts.filter(id => id !== contractId)
-      }));
-      get().addLog('FINANCE', `Contract ${contractId} successfully activated.`, 'SUCCESS');
-    }, 1000);
+      const isLocked = get().lockedContracts.includes(contractId);
+      if (isLocked) {
+        set(state => ({
+          lockedContracts: state.lockedContracts.filter(id => id !== contractId)
+        }));
+        get().addLog('FINANCE', 'Contract lock TTL expired. Edge resolution timed out.', 'WARNING');
+      }
+    }, 10000);
   }
 }));
