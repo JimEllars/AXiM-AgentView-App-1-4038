@@ -50,6 +50,9 @@ async function apiCall(endpoint, method = 'GET', body = null, token = null) {
 }
 
 export const useAgentViewStore = create((set, get) => ({
+  activePersona: 'INTERNAL',
+  setActivePersona: (persona) => set({ activePersona: persona }),
+  realtimeConnectionStatus: 'OFFLINE',
   currentUserRole: 'MANAGER',
   activeWorkers: [],
   activeTasks: [],
@@ -183,7 +186,19 @@ export const useAgentViewStore = create((set, get) => ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ agentId: 'user-123', status: 'ONLINE' })
         }).catch(err => console.error('Heartbeat beacon failed', err));
-      }, 3 * 60 * 1000); // 3 minutes
+
+        // Graceful degradation fallback check
+        const currentWs = get().wsInstance;
+        if (!currentWs || currentWs.readyState !== WebSocket.OPEN) {
+          if (get().realtimeConnectionStatus !== 'OFFLINE') {
+            set({ realtimeConnectionStatus: 'OFFLINE' });
+            get().addLog('INFO', 'Realtime stream unavailable. Seamless fallback to Edge API active.');
+          }
+          get().fetchEcosystemState();
+        } else if (get().realtimeConnectionStatus !== 'ONLINE') {
+           set({ realtimeConnectionStatus: 'ONLINE' });
+        }
+      }, 30000); // Polling interval 30s
       set({ presenceInterval: pInterval });
 
       const isReconnect = state.wsReconnectAttempts > 0;

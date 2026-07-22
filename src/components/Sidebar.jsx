@@ -1,6 +1,7 @@
 import React from 'react';
 import SafeIcon from '../common/SafeIcon';
 import { Link, useLocation } from 'react-router-dom';
+import { useAgentViewStore } from '../store/useAgentViewStore';
 import * as FiIcons from 'react-icons/fi';
 
 const { FiHexagon, FiGrid, FiUsers, FiBox, FiShield } = FiIcons;
@@ -12,6 +13,7 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const activePersona = useAgentViewStore(state => state.activePersona);
   const location = useLocation();
 
   return (
@@ -40,6 +42,11 @@ export default function Sidebar() {
             >
               <SafeIcon icon={item.icon} />
               {item.label}
+              {item.path === '/' && (
+                <span className="ml-auto text-[10px] font-mono text-axim-teal-400 opacity-80 border border-axim-teal-500/30 px-1.5 py-0.5 rounded bg-axim-teal-500/10 uppercase">
+                  {activePersona}
+                </span>
+              )}
             </Link>
           );
         })}

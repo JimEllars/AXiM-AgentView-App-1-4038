@@ -45,7 +45,8 @@ export default function Dashboard() {
   }, []);
 
   const { activeWorkers, activeTasks, isLoading, searchQuery, approveIntake, rejectIntake } = useAgentViewStore();
-  const [activePersona, setActivePersona] = useState('INTERNAL');
+  const activePersona = useAgentViewStore(state => state.activePersona);
+  const setActivePersona = useAgentViewStore(state => state.setActivePersona);
 
   const filteredWorkers = useMemo(() => {
     const baseWorkers = activeWorkers.filter(w => w.persona_type === activePersona);
