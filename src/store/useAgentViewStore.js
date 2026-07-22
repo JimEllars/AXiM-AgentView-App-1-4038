@@ -322,9 +322,20 @@ export const useAgentViewStore = create((set, get) => ({
     try {
       const data = await apiCall('/state');
 
+      // Inject persona_type mock data for Micro-Increment 20
+      const personas = ['INTERNAL', 'CONTRACTOR', 'SUBSCRIBER', 'APPLICANT'];
+      const augmentedWorkers = (data.workers || []).map((w, i) => ({
+        ...w,
+        persona_type: personas[i % personas.length]
+      }));
+      const augmentedTasks = (data.tasks || []).map((t, i) => ({
+        ...t,
+        persona_type: personas[i % personas.length]
+      }));
+
             set({
-        activeWorkers: data.workers || [],
-        activeTasks: data.tasks || [],
+        activeWorkers: augmentedWorkers,
+        activeTasks: augmentedTasks,
         systemLogs: data.logs || [],
         isLoading: false,
         consecutiveFailures: 0
