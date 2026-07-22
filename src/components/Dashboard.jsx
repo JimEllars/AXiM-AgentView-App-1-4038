@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAgentViewStore } from '../store/useAgentViewStore';
 import WorkerCard from './WorkerCard';
@@ -45,24 +45,26 @@ export default function Dashboard() {
   }, []);
 
   const { activeWorkers, activeTasks, isLoading, searchQuery, approveIntake, rejectIntake } = useAgentViewStore();
+  const [activePersona, setActivePersona] = useState('INTERNAL');
 
   const filteredWorkers = useMemo(() => {
-    if (!searchQuery) return activeWorkers;
+    const baseWorkers = activeWorkers.filter(w => w.persona_type === activePersona);
+    if (!searchQuery) return baseWorkers;
     const lowerQ = searchQuery.toLowerCase();
-    return activeWorkers.filter(w => 
+    return baseWorkers.filter(w =>
       w.identity_profile.display_name.toLowerCase().includes(lowerQ) ||
       w.agent_id.toLowerCase().includes(lowerQ) ||
       w.operational_capability.skills.some(s => s.toLowerCase().includes(lowerQ))
     );
-  }, [activeWorkers, searchQuery]);
+  }, [activeWorkers, searchQuery, activePersona]);
 
   const filteredTasks = useMemo(() => {
     const priorityWeights = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
-    let tasks = activeTasks;
+    let tasks = activeTasks.filter(t => t.persona_type === activePersona);
 
     if (searchQuery) {
       const lowerQ = searchQuery.toLowerCase();
-      tasks = activeTasks.filter(t =>
+      tasks = tasks.filter(t =>
         t.title.toLowerCase().includes(lowerQ) ||
         t.task_id.toLowerCase().includes(lowerQ) ||
         t.required_skills.some(s => s.toLowerCase().includes(lowerQ))
@@ -70,7 +72,7 @@ export default function Dashboard() {
     }
 
     return [...tasks].sort((a, b) => (priorityWeights[b.priority] || 0) - (priorityWeights[a.priority] || 0));
-  }, [activeTasks, searchQuery]);
+  }, [activeTasks, searchQuery, activePersona]);
 
   // Gig Board Intake List
   const pendingIntake = useMemo(() => {
@@ -99,11 +101,46 @@ export default function Dashboard() {
     );
   }
 
+  const isPersonaEmpty = !isLoading && filteredWorkers.length === 0 && filteredTasks.length === 0 && !searchQuery;
+
   const aiAgentsCount = activeWorkers.filter(w => w.identity_profile.classification_type === 'AI_AGENT').length;
   const idleCount = activeWorkers.filter(w => w.operational_capability.current_status === 'IDLE').length;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
+
+      {/* Persona Tabs */}
+      <div className="flex space-x-4 border-b border-slate-800 mb-6 overflow-x-auto">
+        {[
+          { id: 'INTERNAL', label: 'Internal Workers' },
+          { id: 'CONTRACTOR', label: 'Contractors' },
+          { id: 'SUBSCRIBER', label: 'Subscribers' },
+          { id: 'APPLICANT', label: 'Job Applicants' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActivePersona(tab.id)}
+            className={`px-4 py-3 font-medium text-sm transition-all whitespace-nowrap ${
+              activePersona === tab.id
+                ? 'text-axim-teal-400 border-b-2 border-axim-teal-500'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {isPersonaEmpty && (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-500 bg-void border border-dashed border-slate-800 rounded-xl">
+          <SafeIcon icon={FiUsers} className="text-6xl mb-4 opacity-30" />
+          <h3 className="text-xl font-medium text-slate-300">No active {activePersona.toLowerCase()} entities</h3>
+          <p className="mt-2 text-sm text-slate-500">This segment currently has zero resources or tasks.</p>
+        </div>
+      )}
+
+      {!isPersonaEmpty && (
+        <>
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-void border border-slate-800 rounded-xl p-5 relative overflow-hidden group hover:border-slate-600 transition-colors">
@@ -146,6 +183,8 @@ export default function Dashboard() {
         </div>
       )}
 
+        </>
+      )}
       {/* Intake Queue */}
       {!searchQuery && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5">
