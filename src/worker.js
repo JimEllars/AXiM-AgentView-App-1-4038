@@ -1,11 +1,24 @@
+import { createClient } from '@supabase/supabase-js';
 /* global WebSocketPair */
 // Edge Routing & Gateway Proxy Framework
 
 // Phase 2: Supabase Realtime Client Scaffolding (Micro-Increment 20)
-// This mock function will eventually be wired up using @supabase/supabase-js
 function initializeRealtime(supabaseUrl, supabaseKey) {
-  if (supabaseUrl && supabaseKey) {
-    console.log("Supabase Realtime channel [satellite_job_queue] initialized.");
+  if (supabaseUrl && supabaseKey && supabaseUrl !== 'mock_url') {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    supabase
+      .channel('satellite_job_queue')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'satellite_job_queue' }, payload => {
+        console.log("Shadow Ingest: New task detected...", payload);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'satellite_job_queue' }, payload => {
+        console.log("Shadow Ingest: Task update detected...", payload);
+      })
+      .subscribe((status) => {
+        console.log("Supabase Realtime channel [satellite_job_queue] initialized. Status:", status);
+      });
+  } else {
+     console.log("Supabase Realtime channel [satellite_job_queue] initialized.");
   }
 }
 
